@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "CalHow",
+    "slug": "calhow",
+    "scheme": "calhow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "backgroundColor": "#FBF7EF",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.calhow.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "CalHow needs camera access so you can scan your meals for AI nutrition analysis.",
+        "NSPhotoLibraryUsageDescription": "CalHow needs photo library access so you can pick a meal photo to analyze."
+      }
+    },
+    "android": {
+      "package": "com.calhow.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["CAMERA"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "CalHow needs camera access so you can scan your meals for AI nutrition analysis."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CalHow needs photo library access so you can pick a meal photo to analyze."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {}
+    }
+  }
+}
