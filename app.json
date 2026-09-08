@@ -14,7 +14,8 @@
       "bundleIdentifier": "com.calhow.app",
       "infoPlist": {
         "NSCameraUsageDescription": "CalHow needs camera access so you can scan your meals for AI nutrition analysis.",
-        "NSPhotoLibraryUsageDescription": "CalHow needs photo library access so you can pick a meal photo to analyze."
+        "NSPhotoLibraryUsageDescription": "CalHow needs photo library access so you can pick a meal photo to analyze.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,7 +27,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -52,7 +56,10 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "d2023da4-b717-4910-b64f-2401342ac5f5"
+      }
     }
   }
 }
