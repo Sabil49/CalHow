@@ -44,13 +44,26 @@ const firebaseConfig: FirebaseOptions = {
 
 function assertConfigured() {
   const missing = Object.entries(firebaseConfig).filter(([, v]) => !v);
-  if (missing.length > 0 && __DEV__) {
+  if (missing.length === 0) return;
+
+  const message =
+    `[firebase] Missing config values: ${missing.map(([k]) => k).join(', ')}. ` +
+    'Set the matching EXPO_PUBLIC_FIREBASE_* env vars — locally via .env ' +
+    '(see .env.example), or for EAS builds via `eas env:create` / `eas env:push` ' +
+    'for the relevant environment (production/preview/development).';
+
+  if (__DEV__) {
     // eslint-disable-next-line no-console
-    console.warn(
-      `[firebase] Missing config values: ${missing.map(([k]) => k).join(', ')}. ` +
-        'Copy .env.example to .env and fill in your Firebase project settings.',
-    );
+    console.warn(message);
+    return;
   }
+
+  // In a built app, a silently-undefined config makes initializeApp() throw
+  // an opaque Firebase internal error with no indication of the real cause —
+  // that's indistinguishable from a random native crash in TestFlight/Play
+  // crash logs. Throw here instead so the error message names the actual
+  // missing env vars.
+  throw new Error(message);
 }
 assertConfigured();
 

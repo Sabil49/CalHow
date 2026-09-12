@@ -1,21 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { PurchasesPackage } from 'react-native-purchases';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { AppHeader } from '@/components/navigation/AppHeader';
 import { AuthGuard } from '@/components/navigation/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { usePurchases } from '@/hooks/usePurchases';
-import { describeFreeTrial, describePackagePrice } from '@/utils/purchaseDisplay';
+import { FREE_DAILY_SCAN_LIMIT } from '@/hooks/useFeatureGate';
 import { theme } from '@/constants/theme';
-
-type PlanId = 'monthly' | 'yearly';
 
 const HIGHLIGHTS: { icon: keyof typeof Feather.glyphMap; title: string; subtitle: string }[] = [
   { icon: 'trending-up', title: 'Smarter tracking', subtitle: 'Better results' },
@@ -23,74 +19,23 @@ const HIGHLIGHTS: { icon: keyof typeof Feather.glyphMap; title: string; subtitle
   { icon: 'shield', title: 'Ad-free', subtitle: 'experience' },
 ];
 
-const PRO_FEATURES: { icon: keyof typeof Feather.glyphMap; title: string; description: string }[] = [
-  { icon: 'repeat', title: 'Unlimited AI Food Scans', description: 'Scan as many meals as you want, anytime, without daily limits.' },
-  { icon: 'cpu', title: 'Smart Meal Memory', description: 'CalHow remembers your corrections, portions and foods to give better results over time.' },
-  { icon: 'zap', title: 'AI Meal Insights', description: 'Get deeper AI analysis and personalized nutrition insights for every meal.' },
-  { icon: 'bar-chart-2', title: 'Advanced Progress Analytics', description: 'Explore detailed charts, trends and correlations to understand your journey better.' },
-  { icon: 'crop', title: 'Restaurant & Menu Scanner', description: 'Scan restaurant menus or meals and get calorie and macro estimates instantly.' },
-  { icon: 'star', title: 'What Should I Eat Next?', description: 'Get smart food recommendations based on your remaining calories and goals.' },
-  { icon: 'sliders', title: 'Custom Goals & Macros', description: 'Set personalized calorie, macro and nutrient goals that fit your lifestyle.' },
-];
-
 /**
- * Fallback-only copy, shown while live RevenueCat offerings are still
- * loading or if they failed to load — never used once real package data
- * is available. See usePlanCards() below, and services/purchases.ts's
- * "NO HARDCODED PRICES" doc comment for why this exists only as a
- * placeholder, not a source of truth.
+ * `live: false` entries are V2 features that don't exist in this codebase
+ * yet — shown dimmed with a "Coming soon" badge rather than hidden, so the
+ * paywall doesn't misrepresent what a Pro subscriber gets today. Only
+ * `live: true` features are ever actually gated/enforced anywhere (see
+ * calhow-backend/services/usage — the free scan quota is the only real
+ * Free/Pro difference in this backend right now).
  */
-const FALLBACK_PLANS: Record<PlanId, { label: string; price: string; billing: string; badge?: string }> = {
-  yearly: { label: 'Yearly', price: '$49.99', billing: '/ year • $4.17 / month', badge: 'Save 50%' },
-  monthly: { label: 'Monthly', price: '$7.99', billing: '/ month • Billed monthly' },
-};
-
-interface PlanCard {
-  id: PlanId;
-  label: string;
-  priceText: string;
-  billingText: string;
-  badge?: string;
-  pkg: PurchasesPackage | null;
-}
-
-/** Combines live offering packages with fallback copy — see FALLBACK_PLANS above. */
-function usePlanCards(): PlanCard[] {
-  const { offering } = usePurchases();
-
-  return useMemo(() => {
-    const monthlyPkg = offering?.monthly ?? null;
-    const yearlyPkg = offering?.annual ?? null;
-
-    let badge: string | undefined = monthlyPkg && yearlyPkg ? undefined : FALLBACK_PLANS.yearly.badge;
-    let yearlyBilling = FALLBACK_PLANS.yearly.billing;
-    if (yearlyPkg?.product.pricePerMonthString) {
-      yearlyBilling = `/ year • ${yearlyPkg.product.pricePerMonthString} / month`;
-      if (monthlyPkg && yearlyPkg.product.pricePerMonth != null && monthlyPkg.product.price > 0) {
-        const savingsPercent = Math.round((1 - yearlyPkg.product.pricePerMonth / monthlyPkg.product.price) * 100);
-        if (savingsPercent > 0) badge = `Save ${savingsPercent}%`;
-      }
-    }
-
-    return [
-      {
-        id: 'yearly',
-        label: FALLBACK_PLANS.yearly.label,
-        priceText: yearlyPkg ? describePackagePrice(yearlyPkg) : FALLBACK_PLANS.yearly.price,
-        billingText: yearlyBilling,
-        badge,
-        pkg: yearlyPkg,
-      },
-      {
-        id: 'monthly',
-        label: FALLBACK_PLANS.monthly.label,
-        priceText: monthlyPkg ? describePackagePrice(monthlyPkg) : FALLBACK_PLANS.monthly.price,
-        billingText: FALLBACK_PLANS.monthly.billing,
-        pkg: monthlyPkg,
-      },
-    ];
-  }, [offering]);
-}
+const PRO_FEATURES: { icon: keyof typeof Feather.glyphMap; title: string; description: string; live: boolean }[] = [
+  { icon: 'repeat', title: 'Unlimited AI Food Scans', description: 'Scan as many meals as you want, anytime, without daily limits.', live: true },
+  { icon: 'cpu', title: 'Smart Meal Memory', description: 'CalHow remembers your corrections, portions and foods to give better results over time.', live: false },
+  { icon: 'zap', title: 'AI Meal Insights', description: 'Get deeper AI analysis and personalized nutrition insights for every meal.', live: false },
+  { icon: 'bar-chart-2', title: 'Advanced Progress Analytics', description: 'Explore detailed charts, trends and correlations to understand your journey better.', live: false },
+  { icon: 'crop', title: 'Restaurant & Menu Scanner', description: 'Scan restaurant menus or meals and get calorie and macro estimates instantly.', live: false },
+  { icon: 'star', title: 'What Should I Eat Next?', description: 'Get smart food recommendations based on your remaining calories and goals.', live: false },
+  { icon: 'sliders', title: 'Custom Goals & Macros', description: 'Set personalized calorie, macro and nutrient goals that fit your lifestyle.', live: false },
+];
 
 export default function PaywallScreen() {
   return (
@@ -102,43 +47,11 @@ export default function PaywallScreen() {
 
 function PaywallScreenContent() {
   const { profile } = useUserProfile();
-  const { loading, error: purchasesError, isPro, customerInfo, purchase, restore } = usePurchases();
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>('yearly');
-  const planCards = usePlanCards();
-
-  const selectedCard = planCards.find((p) => p.id === selectedPlan) ?? planCards[0]!;
-  // Fallback trial copy only while the real package hasn't loaded yet — once it has, describeFreeTrial's
-  // real (possibly null, meaning "no trial") result is used, never overridden by this placeholder.
-  const trialText = selectedCard.pkg ? describeFreeTrial(selectedCard.pkg) : '7-day free trial';
-
-  const { run: handlePurchase, loading: purchasing } = useAsyncAction(async () => {
-    if (!selectedCard.pkg) {
-      Alert.alert('Not available yet', 'Plans are still loading — please try again in a moment.');
-      return;
-    }
-    try {
-      const outcome = await purchase(selectedCard.pkg);
-      if (!outcome.success && !outcome.userCancelled) {
-        Alert.alert('Purchase failed', 'Something went wrong completing your purchase. Please try again.');
-      }
-      // userCancelled: stay silent — the user backed out on purpose.
-      // success: isPro flips reactively via CustomerInfo, re-rendering this screen into the "already Pro" state below.
-    } catch (err) {
-      Alert.alert('Purchase failed', err instanceof Error ? err.message : 'Please try again later.');
-    }
-  });
-
-  const { run: handleRestore, loading: restoring } = useAsyncAction(async () => {
-    try {
-      await restore();
-      Alert.alert(
-        isPro ? 'Purchases restored' : 'No active subscription found',
-        isPro ? "You're all set — CalHow Pro is now active on this device." : "We couldn't find an active CalHow Pro subscription for this account.",
-      );
-    } catch (err) {
-      Alert.alert('Restore failed', err instanceof Error ? err.message : 'Please try again later.');
-    }
-  });
+  // Purchasing is disabled during beta (see the "Coming soon" card below) —
+  // isPro/customerInfo are still read so an already-Pro account (e.g. an
+  // internal tester with a real prior subscription) still sees accurate
+  // status and can manage it, but nothing here can START a new purchase.
+  const { error: purchasesError, isPro, customerInfo } = usePurchases();
 
   function handleManageSubscription() {
     const url = customerInfo?.managementURL;
@@ -202,78 +115,42 @@ function PaywallScreenContent() {
           <Card style={styles.card}>
             <Text style={styles.cardTitle}>Everything in Free, plus:</Text>
             {PRO_FEATURES.map((feature) => (
-              <View key={feature.title} style={styles.featureRow}>
-                <View style={styles.featureIconWrap}>
-                  <Feather name={feature.icon} size={16} color={theme.colors.brandDark} />
+              <View key={feature.title} style={[styles.featureRow, !feature.live && styles.featureRowDisabled]}>
+                <View style={[styles.featureIconWrap, !feature.live && styles.featureIconWrapDisabled]}>
+                  <Feather name={feature.icon} size={16} color={feature.live ? theme.colors.brandDark : theme.colors.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.featureTitle}>{feature.title}</Text>
+                  <Text style={[styles.featureTitle, !feature.live && styles.featureTitleDisabled]}>{feature.title}</Text>
                   <Text style={styles.featureDescription}>{feature.description}</Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={theme.colors.textMuted} />
+                {feature.live ? (
+                  <Feather name="chevron-right" size={16} color={theme.colors.textMuted} />
+                ) : (
+                  <View style={styles.comingSoonBadge}>
+                    <Text style={styles.comingSoonText}>Coming soon</Text>
+                  </View>
+                )}
               </View>
             ))}
           </Card>
 
           <Card style={styles.card}>
-            <View style={styles.cardTitleRow}>
-              <Text style={styles.cardTitle}>Choose your plan</Text>
-              {loading && <ActivityIndicator size="small" color={theme.colors.brandPrimary} />}
+            <View style={styles.betaBadgeRow}>
+              <Feather name="clock" size={14} color={theme.colors.brandDark} />
+              <Text style={styles.betaTitle}>Pro subscription — Coming soon</Text>
             </View>
-            <View style={styles.planRow}>
-              {planCards.map((plan) => {
-                const selected = selectedPlan === plan.id;
-                return (
-                  <Pressable
-                    key={plan.id}
-                    onPress={() => setSelectedPlan(plan.id)}
-                    style={[styles.planCard, selected && styles.planCardSelected]}
-                  >
-                    {selected && (
-                      <View style={styles.planCheck}>
-                        <Feather name="check" size={10} color={theme.colors.textInverse} />
-                      </View>
-                    )}
-                    <View style={styles.planLabelRow}>
-                      <Text style={styles.planLabel}>{plan.label}</Text>
-                      {plan.badge && (
-                        <View style={styles.planBadge}>
-                          <Text style={styles.planBadgeText}>{plan.badge}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.planPrice}>{plan.priceText}</Text>
-                    <Text style={styles.planBilling}>{plan.billingText}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <View style={styles.trustRow}>
-              <Feather name="shield" size={12} color={theme.colors.textSecondary} />
-              <Text style={styles.trustText}>
-                {trialText ? `${trialText} • ` : ''}Cancel anytime • Secure payment
-              </Text>
-            </View>
-
-            <Button
-              label={trialText ? 'Start Free Trial' : 'Subscribe Now'}
-              icon="award"
-              onPress={handlePurchase}
-              loading={purchasing}
-              disabled={loading && !selectedCard.pkg}
-            />
+            <Text style={styles.betaBody}>
+              CalHow Pro isn't open for purchase during the beta — nothing here will charge you. In the meantime,
+              beta testers get {FREE_DAILY_SCAN_LIMIT} free AI scans a day (raised from the normal free-tier limit) so
+              you can put the app through its paces.
+            </Text>
 
             <View style={styles.linksRow}>
-              <Text style={styles.linkText} onPress={restoring ? undefined : handleRestore}>
-                {restoring ? 'Restoring…' : 'Restore Purchase'}
-              </Text>
-              <Text style={styles.linkDivider}>|</Text>
-              <Text style={styles.linkText} onPress={() => Alert.alert('Terms of Use', 'Coming soon.')}>
+              <Text style={styles.linkText} onPress={() => router.push('/settings/terms')}>
                 Terms of Use
               </Text>
               <Text style={styles.linkDivider}>|</Text>
-              <Text style={styles.linkText} onPress={() => Alert.alert('Privacy Policy', 'Coming soon.')}>
+              <Text style={styles.linkText} onPress={() => router.push('/settings/privacy')}>
                 Privacy Policy
               </Text>
             </View>
@@ -394,6 +271,9 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
   },
+  featureRowDisabled: {
+    opacity: 0.55,
+  },
   featureIconWrap: {
     width: 36,
     height: 36,
@@ -402,82 +282,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  featureIconWrapDisabled: {
+    backgroundColor: theme.colors.border,
+  },
   featureTitle: {
     ...theme.text.cardTitle,
     color: theme.colors.textPrimary,
+  },
+  featureTitleDisabled: {
+    color: theme.colors.textSecondary,
+  },
+  comingSoonBadge: {
+    backgroundColor: theme.colors.border,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 3,
+  },
+  comingSoonText: {
+    ...theme.text.caption,
+    fontSize: 10,
+    fontFamily: theme.fontFamily.sansSemiBold,
+    color: theme.colors.textSecondary,
   },
   featureDescription: {
     ...theme.text.caption,
     color: theme.colors.textSecondary,
   },
-  planRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
-  planCard: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    gap: 2,
-  },
-  planCardSelected: {
-    borderColor: theme.colors.brandPrimary,
-    backgroundColor: theme.colors.brandTint,
-  },
-  planCheck: {
-    position: 'absolute',
-    top: theme.spacing.xs,
-    right: theme.spacing.xs,
-    width: 16,
-    height: 16,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.success,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  planLabelRow: {
+  betaBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: theme.spacing.xs,
   },
-  planLabel: {
+  betaTitle: {
     ...theme.text.cardTitle,
-    color: theme.colors.textPrimary,
-  },
-  planBadge: {
-    backgroundColor: theme.colors.successBg,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-  },
-  planBadgeText: {
-    ...theme.text.caption,
-    fontSize: 9,
-    color: theme.colors.success,
-    fontFamily: theme.fontFamily.sansSemiBold,
-  },
-  planPrice: {
-    fontFamily: theme.fontFamily.serifBold,
     fontSize: theme.fontSize.lg,
     color: theme.colors.textPrimary,
-    marginTop: 2,
   },
-  planBilling: {
-    ...theme.text.caption,
-    fontSize: 10,
-    color: theme.colors.textSecondary,
-  },
-  trustRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  trustText: {
-    ...theme.text.caption,
-    fontSize: 11,
+  betaBody: {
+    ...theme.text.body,
     color: theme.colors.textSecondary,
   },
   linksRow: {

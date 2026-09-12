@@ -7,10 +7,12 @@ import { AppHeader } from '@/components/navigation/AppHeader';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
+import { HeroGlow } from '@/components/ui/HeroGlow';
 import { LeafAccent } from '@/components/ui/LeafAccent';
 import { SocialAuthButton } from '@/components/forms/SocialAuthButton';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { loginWithEmail, sendPasswordReset, SOCIAL_AUTH_ENABLED } from '@/services/auth';
+import { useSocialAuth } from '@/hooks/useSocialAuth';
+import { loginWithEmail, sendPasswordReset } from '@/services/auth';
 import { theme } from '@/constants/theme';
 
 export default function LoginScreen() {
@@ -24,6 +26,22 @@ export default function LoginScreen() {
     // (Home vs. onboarding), rather than duplicating that logic here.
     router.replace('/');
   });
+
+  const {
+    signInWithGoogle,
+    signInWithApple,
+    googleLoading,
+    appleLoading,
+    appleAvailable,
+    error: socialError,
+  } = useSocialAuth();
+
+  async function handleGoogle() {
+    if (await signInWithGoogle()) router.replace('/');
+  }
+  async function handleApple() {
+    if (await signInWithApple()) router.replace('/');
+  }
 
   async function handleForgotPassword() {
     if (!email.trim()) {
@@ -55,7 +73,10 @@ export default function LoginScreen() {
         <LeafAccent style={styles.leaf} />
       </View>
 
-      <FoodHeroImage size={130} style={styles.hero} />
+      <View style={styles.heroWrap}>
+        <HeroGlow size={180} style={styles.heroGlow} />
+        <FoodHeroImage size={130} style={styles.hero} />
+      </View>
 
       <View style={styles.card}>
         <Input
@@ -85,10 +106,10 @@ export default function LoginScreen() {
           <Text style={styles.rememberText}>Remember me</Text>
         </Pressable>
 
-        {error && (
+        {(error || socialError) && (
           <View style={styles.errorBanner}>
             <Feather name="alert-circle" size={14} color={theme.colors.error} />
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorText}>{error || socialError}</Text>
           </View>
         )}
 
@@ -101,9 +122,10 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.circleRow}>
-          <SocialAuthButton provider="google" variant="circle" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
-          <SocialAuthButton provider="apple" variant="circle" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
-          <SocialAuthButton provider="facebook" variant="circle" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
+          <SocialAuthButton provider="google" variant="circle" onPress={handleGoogle} loading={googleLoading} disabled={appleLoading} />
+          {appleAvailable && (
+            <SocialAuthButton provider="apple" variant="circle" onPress={handleApple} loading={appleLoading} disabled={googleLoading} />
+          )}
         </View>
       </View>
 
@@ -142,10 +164,17 @@ const styles = StyleSheet.create({
   leaf: {
     marginTop: theme.spacing.xs,
   },
-  hero: {
+  heroWrap: {
+    position: 'relative',
     alignSelf: 'flex-end',
     marginTop: -theme.spacing.xl,
   },
+  heroGlow: {
+    position: 'absolute',
+    top: -25,
+    left: -25,
+  },
+  hero: {},
   card: {
     marginTop: theme.spacing.lg,
     backgroundColor: theme.colors.card,

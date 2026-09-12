@@ -1,9 +1,13 @@
 import {
   createUserWithEmailAndPassword,
   EmailAuthProvider,
+  getAdditionalUserInfo,
+  GoogleAuthProvider,
+  OAuthProvider,
   onAuthStateChanged,
   reauthenticateWithCredential,
   sendPasswordResetEmail,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   updatePassword,
@@ -14,16 +18,6 @@ import { auth } from './firebase';
 import { createUserProfile } from './firestore';
 
 export type { User };
-
-/**
- * Single switch controlling whether social sign-in buttons are
- * interactive anywhere in the app (Welcome/Social Auth/Login/Signup).
- * signInWithGoogle/Apple/Facebook below are not implemented yet — flip
- * this to true only once they actually work, so the UI and the
- * implementation change together instead of the UI lying about what's
- * available.
- */
-export const SOCIAL_AUTH_ENABLED = false;
 
 export function subscribeToAuthChanges(callback: (user: User | null) => void) {
   return onAuthStateChanged(auth, callback);
@@ -78,26 +72,54 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 /**
- * Social sign-in (Google / Apple / Facebook).
+ * Social sign-in (Google / Apple).
  *
- * NOT YET IMPLEMENTED — requires native OAuth setup (expo-auth-session /
- * @react-native-google-signin, Apple entitlements, Facebook SDK config)
- * which depends on real client IDs from each provider console. Wire this
- * up once those credentials exist; the Social_Auth screen already has the
- * UI and calls these functions so only the implementation needs filling in.
- * Until then, SOCIAL_AUTH_ENABLED (above) keeps the buttons that call
- * these disabled in the UI so they can't be reached.
+ * The native provider prompt itself (the Google account picker sheet /
+ * Apple's Face ID sheet) is driven by hooks/useSocialAuth.ts — it's a
+ * hook because @react-native-google-signin/google-signin and
+ * expo-apple-authentication are both native-module APIs that need to run
+ * from a component, not a plain service function. These two functions
+ * are the second half: given the token the native SDK handed back,
+ * exchange it for a Firebase session and — for a first-time social
+ * sign-in — create the same users/{uid} profile doc signUpWithEmail
+ * creates, so every account (email or social) has one from the start.
  */
-export async function signInWithGoogle(): Promise<User> {
-  throw new Error('signInWithGoogle: not implemented — requires Google OAuth client setup.');
+async function ensureSocialUserProfile(user: User, isNewUser: boolean | undefined, fallbackFullName?: string) {
+  if (!isNewUser) return;
+  await createUserProfile(user.uid, {
+    email: user.email,
+    fullName: user.displayName || fallbackFullName || '',
+  });
 }
 
-export async function signInWithApple(): Promise<User> {
-  throw new Error('signInWithApple: not implemented — requires Apple Sign In entitlement setup.');
+/** Exchanges a Google ID token (from GoogleSignin.signIn(), via useSocialAuth) for a Firebase session. */
+export async function signInWithGoogleIdToken(idToken: string): Promise<User> {
+  const credential = GoogleAuthProvider.credential(idToken);
+  const result = await signInWithCredential(auth, credential);
+  await ensureSocialUserProfile(result.user, getAdditionalUserInfo(result)?.isNewUser);
+  return result.user;
 }
 
-export async function signInWithFacebook(): Promise<User> {
-  throw new Error(
-    'signInWithFacebook: not implemented — requires Facebook SDK app configuration.',
-  );
+/**
+ * Exchanges an Apple identity token (from AppleAuthentication.signInAsync(),
+ * via useSocialAuth) for a Firebase session. `rawNonce` must be the
+ * un-hashed nonce whose SHA-256 digest was passed as the `nonce` option to
+ * signInAsync — Firebase re-derives and checks that hash to confirm this
+ * token was minted for this exact sign-in attempt.
+ *
+ * `fullName` is passed separately because Apple only ever includes the
+ * user's name in the very first authorization response for this app —
+ * every subsequent sign-in omits it, so it can't be re-derived from
+ * `result.user` on a later call the way it can right after signup.
+ */
+export async function signInWithAppleCredential(params: {
+  identityToken: string;
+  rawNonce: string;
+  fullName?: string;
+}): Promise<User> {
+  const provider = new OAuthProvider('apple.com');
+  const credential = provider.credential({ idToken: params.identityToken, rawNonce: params.rawNonce });
+  const result = await signInWithCredential(auth, credential);
+  await ensureSocialUserProfile(result.user, getAdditionalUserInfo(result)?.isNewUser, params.fullName);
+  return result.user;
 }

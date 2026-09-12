@@ -67,6 +67,8 @@ export const gradients = {
   ambientGlow: [palette.glowYellow, palette.cream] as const,
   // Pro / paywall crown badge
   gold: ['#F6C453', '#E8A233'] as const,
+  // Subtle whole-screen wash — low-contrast enough to sit behind dense text/forms
+  screenBackground: [palette.cream, palette.creamDeep] as const,
 };
 
 export const colors = {

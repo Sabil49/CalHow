@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -100,13 +100,12 @@ export default function MealSavedScreen() {
               </Text>
             </View>
           </View>
-          <Pressable
-            style={styles.addAnotherButton}
-            onPress={() => Alert.alert('Add to another meal or day', 'Coming soon.')}
-          >
-            <Feather name="plus" size={14} color={theme.colors.brandDark} />
-            <Text style={styles.addAnotherText}>Add to another meal or day</Text>
-          </Pressable>
+          <View style={[styles.addAnotherButton, styles.addAnotherButtonDisabled]}>
+            <Feather name="plus" size={14} color={theme.colors.textMuted} />
+            <Text style={[styles.addAnotherText, styles.addAnotherTextDisabled]} numberOfLines={1}>
+              Add to another meal — Coming soon
+            </Text>
+          </View>
         </View>
       </Card>
 
@@ -254,11 +253,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
   },
+  addAnotherButtonDisabled: {
+    backgroundColor: theme.colors.border,
+    opacity: 0.7,
+  },
   addAnotherText: {
     ...theme.text.caption,
     fontSize: 11,
     color: theme.colors.brandDark,
     fontFamily: theme.fontFamily.sansSemiBold,
+  },
+  addAnotherTextDisabled: {
+    color: theme.colors.textMuted,
   },
   card: {
     marginTop: theme.spacing.md,

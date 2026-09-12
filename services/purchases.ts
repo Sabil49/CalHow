@@ -169,8 +169,16 @@ export function isProFromCustomerInfo(info: CustomerInfo | null): boolean {
   return info.entitlements.active[CALHOW_PRO_ENTITLEMENT_ID] != null;
 }
 
-/** Subscribes to live CustomerInfo updates (e.g. a renewal or an externally-completed purchase) — returns an unsubscribe function. */
+/**
+ * Subscribes to live CustomerInfo updates (e.g. a renewal or an
+ * externally-completed purchase) — returns an unsubscribe function.
+ * No-ops (returns a harmless unsubscribe) when the SDK isn't configured,
+ * matching every other function in this module — registering a listener
+ * with an unconfigured SDK isn't meaningful and, on some platforms/shims,
+ * isn't safe to call at all.
+ */
 export function addCustomerInfoListener(listener: (info: CustomerInfo) => void): () => void {
+  if (!configured) return () => {};
   Purchases.addCustomerInfoUpdateListener(listener);
   return () => {
     Purchases.removeCustomerInfoUpdateListener(listener);

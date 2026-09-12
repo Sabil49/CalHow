@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { ProgressRing, ProgressRingLabel } from '@/components/ui/ProgressRing';
 import { NutritionMetric } from '@/components/nutrition/NutritionMetric';
 import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
+import { HeroGlow } from '@/components/ui/HeroGlow';
 import { ScanFoodButton } from '@/components/meal/ScanFoodButton';
 import { MealListItem } from '@/components/meal/MealListItem';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -45,6 +46,7 @@ export default function HomeScreen() {
       </Text>
 
       <View style={styles.heroWrap}>
+        <HeroGlow size={280} style={styles.heroGlow} />
         <FoodHeroImage width="100%" height={220} style={styles.hero} />
         <View style={styles.scanButtonWrap}>
           <ScanFoodButton onPress={() => router.push('/scan/camera')} />
@@ -145,6 +147,12 @@ const styles = StyleSheet.create({
   heroWrap: {
     marginTop: theme.spacing.lg,
     position: 'relative',
+  },
+  heroGlow: {
+    position: 'absolute',
+    top: -30,
+    left: '50%',
+    marginLeft: -140,
   },
   hero: {},
   scanButtonWrap: {

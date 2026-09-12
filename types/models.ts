@@ -58,10 +58,10 @@ export interface DietaryPreferences {
 }
 
 /**
- * Reminder preferences only — these are persisted settings, NOT a
- * guarantee that a notification will actually fire. See
- * services/notifications.ts (currently absent — expo-notifications isn't
- * installed in this project) before assuming reminders are functional.
+ * Reminder preferences. Persisted here, but the actual OS-level scheduling
+ * lives in services/notifications.ts (local notifications via
+ * expo-notifications — no push/server involved); app/settings/reminders.tsx
+ * is the only writer, and calls syncScheduledReminders after every save.
  * Times are stored as "HH:mm" 24-hour strings for unambiguous canonical
  * storage regardless of the device's locale/unit preferences.
  */

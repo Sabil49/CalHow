@@ -15,7 +15,9 @@ export const tabBarStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: theme.colors.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderRadius: theme.radius.xl,
+    marginHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    ...theme.shadows.floating,
   },
 });

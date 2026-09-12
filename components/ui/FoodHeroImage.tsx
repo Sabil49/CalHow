@@ -2,12 +2,13 @@ import React from 'react';
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { theme } from '@/constants/theme';
 
-// Default bundled hero photo — a bright, naturally-lit white-ceramic-bowl
-// shot (grilled chicken, avocado, cherry tomatoes) matching the reference
-// designs' mood. Free stock photography, Hanxiao Xu, licensed for
-// commercial use under the standard Unsplash License (no attribution
-// required — credited here anyway as good practice):
-// https://unsplash.com/photos/vegetable-salad-in-white-ceramic-bowl-55zb9e_KcvM
+// Default bundled hero photo — a bright, colorful overhead salad bowl shot
+// (cherry tomatoes on the vine, fanned avocado slices, chickpeas, sweet
+// potato, radish) matching the reference designs' mood. Free stock
+// photography, Anna Pelzer, licensed for commercial use under the
+// standard Unsplash License (no attribution required — credited here
+// anyway as good practice):
+// https://unsplash.com/photos/bowl-of-vegetable-salads-IGfIGP5ONV0
 const defaultHeroSource = require('../../assets/food/hero-bowl.jpg');
 
 interface FoodHeroImageProps {
@@ -19,7 +20,7 @@ interface FoodHeroImageProps {
   /** Square size shorthand. Ignored if `width`/`height` are given. */
   size?: number;
   width?: number | `${number}%`;
-  height?: number;
+  height?: number | `${number}%`;
 }
 
 /**

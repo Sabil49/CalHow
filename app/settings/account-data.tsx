@@ -72,7 +72,7 @@ export default function AccountDataScreen() {
         <Feather name="info" size={12} color={theme.colors.textMuted} />
         <Text style={styles.footnoteText}>
           This deletes what CalHow's app stores for you today. If backend logs, uploaded photos, or billing records
-          exist in the future, those systems will need their own deletion process — see services/account.ts.
+          exist in the future, those systems will need their own deletion process.
         </Text>
       </View>
 

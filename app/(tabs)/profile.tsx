@@ -11,10 +11,6 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { signOut } from '@/services/auth';
 import { theme } from '@/constants/theme';
 
-function notImplemented(feature: string) {
-  Alert.alert(feature, 'This settings screen isn\u2019t built yet — coming in a future update.');
-}
-
 export default function ProfileScreen() {
   const { profile } = useUserProfile();
   const isPro = useIsPro();
@@ -40,8 +36,8 @@ export default function ProfileScreen() {
     <ScreenContainer>
       <View style={styles.topBar}>
         <CalHowLogo markSize={24} textSize={theme.fontSize.lg} />
-        <Pressable style={styles.bellButton} onPress={() => notImplemented('Notifications')}>
-          <Feather name="bell" size={18} color={theme.colors.textPrimary} />
+        <Pressable style={[styles.bellButton, styles.bellButtonDisabled]} disabled>
+          <Feather name="bell" size={18} color={theme.colors.textMuted} />
         </Pressable>
       </View>
 
@@ -86,7 +82,7 @@ export default function ProfileScreen() {
       <Card style={styles.card}>
         <SettingsRow icon="user" title="Personal Information" subtitle="Update your name, email and more" onPress={() => router.push('/settings/personal-information')} />
         <SettingsRow icon="lock" title="Change Password" subtitle="Update your account password" onPress={() => router.push('/settings/change-password')} />
-        <SettingsRow icon="shield" title="Security" subtitle="Manage 2FA and login security" onPress={() => notImplemented('Security')} />
+        <SettingsRow icon="shield" title="Security" subtitle="Manage 2FA and login security" onPress={() => {}} disabled />
         <SettingsRow icon="award" title="CalHow Pro" subtitle="Manage your subscription and billing" onPress={() => router.push('/paywall')} />
         <SettingsRow icon="database" title="Account & Data" subtitle="View your data, delete your account" onPress={() => router.push('/settings/account-data')} />
       </Card>
@@ -101,8 +97,8 @@ export default function ProfileScreen() {
 
       <Text style={styles.sectionHeading}>General</Text>
       <Card style={styles.card}>
-        <SettingsRow icon="droplet" title="Appearance" subtitle="Theme, colors and app icon" onPress={() => notImplemented('Appearance')} />
-        <SettingsRow icon="globe" title="Language" trailingText="English" onPress={() => notImplemented('Language')} />
+        <SettingsRow icon="droplet" title="Appearance" subtitle="Theme, colors and app icon" onPress={() => {}} disabled />
+        <SettingsRow icon="globe" title="Language" trailingText="English" onPress={() => {}} disabled />
         <SettingsRow icon="help-circle" title="Help & Support" subtitle="FAQs, contact us and more" onPress={() => router.push('/settings/help-support')} />
         <SettingsRow icon="file-text" title="Terms & Policies" subtitle="Privacy policy, terms of use and more" onPress={() => router.push('/settings/terms')} />
       </Card>
@@ -142,6 +138,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...theme.shadows.card,
+  },
+  bellButtonDisabled: {
+    opacity: 0.55,
   },
   heading: {
     ...theme.text.screenHeading,

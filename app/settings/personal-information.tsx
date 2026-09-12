@@ -13,8 +13,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { updateUserProfile } from '@/services/firestore';
 import { kgToLb, lbToKg } from '@/utils/units';
+import { calculateAge } from '@/utils/nutrition';
 import { theme } from '@/constants/theme';
 import type { Gender } from '@/types/models';
+
+/** CalHow's minimum age — see Settings → Terms of Use, "Who can use CalHow". */
+const MINIMUM_AGE = 18;
 
 const GENDER_OPTIONS: { label: string; value: Gender }[] = [
   { label: 'Female', value: 'female' },
@@ -23,7 +27,9 @@ const GENDER_OPTIONS: { label: string; value: Gender }[] = [
   { label: 'Prefer not to say', value: 'prefer_not_to_say' },
 ];
 
-const MAX_DOB = new Date();
+// The date picker itself can't be scrolled past this, so no one can select
+// a birthdate that would make them younger than MINIMUM_AGE today.
+const MAX_DOB = new Date(new Date().getFullYear() - MINIMUM_AGE, new Date().getMonth(), new Date().getDate());
 const MIN_DOB = new Date(new Date().getFullYear() - 120, 0, 1);
 
 export default function PersonalInformationScreen() {
@@ -43,6 +49,13 @@ export default function PersonalInformationScreen() {
 
   const { run: handleSave, loading, error } = useAsyncAction(async () => {
     if (!user) return;
+    if (dateOfBirth) {
+      const age = calculateAge(dateOfBirth);
+      if (age === undefined || age < MINIMUM_AGE) {
+        throw new Error(`You must be at least ${MINIMUM_AGE} years old to use CalHow.`);
+      }
+    }
+
     const weightValue = Number(weightText);
     const currentWeightKg = weightValue > 0 ? (preferredUnit === 'imperial' ? lbToKg(weightValue) : weightValue) : undefined;
 

@@ -17,10 +17,45 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
-import { AuthProvider } from '@/hooks/useAuth';
+import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { PurchasesProvider } from '@/hooks/usePurchases';
 import { ScanSessionProvider } from '@/hooks/useScanSession';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { getNotificationPermissionGranted, syncScheduledReminders } from '@/services/notifications';
 import { theme } from '@/constants/theme';
+
+/**
+ * Keeps the OS's scheduled reminder notifications in sync with Firestore
+ * on every app start, without ever prompting for permission itself (that
+ * only happens from the Reminders screen's Save button). This covers:
+ *   - a user who enabled reminders before this feature existed (nothing
+ *     was ever scheduled for them until they revisit Settings otherwise)
+ *   - a reinstall, where the OS's previously-scheduled notifications are
+ *     gone but the Firestore preference survived
+ * Silently does nothing if permission was never granted.
+ */
+function ReminderSync() {
+  const { user } = useAuth();
+  const { profile } = useUserProfile();
+  // Firestore's live listener re-fires with a new `profile` object
+  // reference on every snapshot (cache, then server) even when the data
+  // is unchanged. Keying the effect off this serialized value instead of
+  // `profile` itself avoids redundant re-syncs for those no-op updates —
+  // syncScheduledReminders is already safe to call repeatedly (it's
+  // serialized, see services/notifications.ts), this is purely to cut
+  // needless churn.
+  const remindersKey = JSON.stringify(profile?.reminders ?? null);
+
+  useEffect(() => {
+    if (!user || !profile) return;
+    getNotificationPermissionGranted().then((granted) => {
+      if (granted) void syncScheduledReminders(profile.reminders);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, remindersKey]);
+
+  return null;
+}
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   /* no-op: fails harmlessly if already hidden */
@@ -59,6 +94,7 @@ export default function RootLayout() {
       <AuthProvider>
         <PurchasesProvider>
           <ScanSessionProvider>
+            <ReminderSync />
             <StatusBar style="dark" />
             <Stack
               screenOptions={{

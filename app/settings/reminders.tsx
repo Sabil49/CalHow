@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Linking, Modal, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -12,6 +12,11 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { updateUserProfile } from '@/services/firestore';
+import {
+  getNotificationPermissionGranted,
+  requestNotificationPermission,
+  syncScheduledReminders,
+} from '@/services/notifications';
 import { theme } from '@/constants/theme';
 
 const DAY_OPTIONS: { label: string; value: `${number}` }[] = [
@@ -44,11 +49,9 @@ function formatTimeString(time?: string): string {
 }
 
 /**
- * Persists reminder PREFERENCES only. This app does not have
- * expo-notifications installed and has no permission/scheduling code
- * anywhere — see services/notifications.ts (absent). Saving a time here
- * does not schedule anything; the notice below makes that explicit rather
- * than implying reminders will fire.
+ * Persists reminder preferences AND schedules the matching local
+ * notifications (see services/notifications.ts) — no server/push
+ * involved, purely on-device via expo-notifications.
  */
 export default function RemindersScreen() {
   const { user } = useAuth();
@@ -68,19 +71,38 @@ export default function RemindersScreen() {
 
   const [activePicker, setActivePicker] = useState<null | 'breakfast' | 'lunch' | 'dinner' | 'weight'>(null);
 
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  useEffect(() => {
+    getNotificationPermissionGranted().then((granted) => setPermissionDenied(!granted));
+  }, []);
+
   const { run: handleSave, loading, error } = useAsyncAction(async () => {
     if (!user) return;
-    await updateUserProfile(user.uid, {
-      reminders: {
-        mealRemindersEnabled,
-        breakfastTime: mealRemindersEnabled ? breakfastTime : undefined,
-        lunchTime: mealRemindersEnabled ? lunchTime : undefined,
-        dinnerTime: mealRemindersEnabled ? dinnerTime : undefined,
-        weightReminderEnabled,
-        weightReminderDay: weightReminderEnabled ? Number(weightReminderDay) : undefined,
-        weightReminderTime: weightReminderEnabled ? weightReminderTime : undefined,
-      },
-    });
+
+    const nextReminders = {
+      mealRemindersEnabled,
+      breakfastTime: mealRemindersEnabled ? breakfastTime : undefined,
+      lunchTime: mealRemindersEnabled ? lunchTime : undefined,
+      dinnerTime: mealRemindersEnabled ? dinnerTime : undefined,
+      weightReminderEnabled,
+      weightReminderDay: weightReminderEnabled ? Number(weightReminderDay) : undefined,
+      weightReminderTime: weightReminderEnabled ? weightReminderTime : undefined,
+    };
+
+    if (mealRemindersEnabled || weightReminderEnabled) {
+      const granted = await requestNotificationPermission();
+      setPermissionDenied(!granted);
+      if (!granted) {
+        Alert.alert(
+          'Notifications disabled',
+          "Your reminder times are saved, but CalHow can't send them until you allow notifications in your device Settings.",
+          [{ text: 'OK' }, { text: 'Open Settings', onPress: () => Linking.openSettings() }],
+        );
+      }
+    }
+
+    await updateUserProfile(user.uid, { reminders: nextReminders });
+    await syncScheduledReminders(nextReminders);
     router.back();
   });
 
@@ -110,13 +132,15 @@ export default function RemindersScreen() {
       <Text style={styles.heading}>Reminders</Text>
       <Text style={styles.subtitle}>Choose when you'd like to be reminded to log meals and your weight.</Text>
 
-      <View style={styles.notice}>
-        <Feather name="bell-off" size={16} color={theme.colors.warning} />
-        <Text style={styles.noticeText}>
-          Push notifications aren't set up in this app yet. Your reminder times are saved, but no notifications will
-          actually be sent until that's built.
-        </Text>
-      </View>
+      {permissionDenied && (
+        <View style={styles.notice}>
+          <Feather name="bell-off" size={16} color={theme.colors.warning} />
+          <Text style={styles.noticeText}>
+            Notifications are turned off for CalHow. Enable them in your device Settings, or you'll save reminder
+            times without ever being reminded.
+          </Text>
+        </View>
+      )}
 
       <Card style={styles.card}>
         <View style={styles.toggleRow}>

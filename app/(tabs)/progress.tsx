@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -64,6 +64,9 @@ export default function ProgressScreen() {
     return Math.round(((thisWeekAvg - lastWeekAvg) / lastWeekAvg) * 100);
   }, [meals]);
 
+  const [chartWidth, setChartWidth] = useState(0);
+  const onChartLayout = useCallback((e: LayoutChangeEvent) => setChartWidth(e.nativeEvent.layout.width), []);
+
   const macroTotal = macroBalance.proteinG * 4 + macroBalance.carbsG * 4 + macroBalance.fatsG * 9;
   const firstName = profile?.fullName?.split(' ')[0] || 'there';
   const periodDays = periodToDays(period);
@@ -115,45 +118,52 @@ export default function ProgressScreen() {
         </View>
       </Card>
 
-      <View style={styles.chartRow}>
-        <Card style={styles.chartCard}>
-          <Text style={styles.cardTitle}>Calorie Trend</Text>
-          <Text style={styles.chartSubLabel}>(kcal/day)</Text>
-          <Text style={styles.chartBigValue}>{avgKcalPerDay}</Text>
-          {wowChange != null && (
-            <View style={styles.wowBadge}>
-              <Feather name={wowChange >= 0 ? 'arrow-up' : 'arrow-down'} size={10} color={theme.colors.brandDark} />
-              <Text style={styles.wowText}>{Math.abs(wowChange)}% vs last week</Text>
-            </View>
-          )}
-          <LineChartMini values={chartBuckets.map((b) => b.value)} width={140} height={70} />
-        </Card>
-
-        <Card style={styles.chartCard}>
-          <Text style={styles.cardTitle}>Macronutrient Balance</Text>
-          <Text style={styles.chartSubLabel}>(Average)</Text>
-          <View style={styles.donutRow}>
-            <DonutChart
-              size={90}
-              strokeWidth={14}
-              segments={
-                macroTotal > 0
-                  ? [
-                      { value: macroBalance.proteinG * 4, color: theme.colors.nutrition.protein },
-                      { value: macroBalance.fatsG * 9, color: theme.colors.nutrition.fats },
-                      { value: macroBalance.carbsG * 4, color: theme.colors.nutrition.carbs },
-                    ]
-                  : [{ value: 1, color: theme.palette.ink100 }]
-              }
-            />
-            <View style={styles.donutLegend}>
-              <LegendItem color={theme.colors.nutrition.protein} label="Protein" value={`${macroBalance.proteinG}g`} />
-              <LegendItem color={theme.colors.nutrition.fats} label="Fats" value={`${macroBalance.fatsG}g`} />
-              <LegendItem color={theme.colors.nutrition.carbs} label="Carbs" value={`${macroBalance.carbsG}g`} />
-            </View>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Calorie Trend</Text>
+        <Text style={styles.chartSubLabel}>(kcal/day)</Text>
+        <Text style={styles.chartBigValue}>{avgKcalPerDay}</Text>
+        {wowChange != null && (
+          <View style={styles.wowBadge}>
+            <Feather name={wowChange >= 0 ? 'arrow-up' : 'arrow-down'} size={10} color={theme.colors.brandDark} />
+            <Text style={styles.wowText}>{Math.abs(wowChange)}% vs last week</Text>
           </View>
-        </Card>
-      </View>
+        )}
+        <View onLayout={onChartLayout}>
+          {chartWidth > 0 && <LineChartMini values={chartBuckets.map((b) => b.value)} width={chartWidth} height={120} />}
+        </View>
+        <View style={styles.chartLabelsRow}>
+          {chartBuckets.map((b, i) => (
+            <Text key={i} style={styles.chartLabelText}>
+              {b.label}
+            </Text>
+          ))}
+        </View>
+      </Card>
+
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Macronutrient Balance</Text>
+        <Text style={styles.chartSubLabel}>(Average)</Text>
+        <View style={styles.donutWrap}>
+          <DonutChart
+            size={160}
+            strokeWidth={20}
+            segments={
+              macroTotal > 0
+                ? [
+                    { value: macroBalance.proteinG * 4, color: theme.colors.nutrition.protein },
+                    { value: macroBalance.fatsG * 9, color: theme.colors.nutrition.fats },
+                    { value: macroBalance.carbsG * 4, color: theme.colors.nutrition.carbs },
+                  ]
+                : [{ value: 1, color: theme.palette.ink100 }]
+            }
+          />
+        </View>
+        <View style={styles.donutLegendRow}>
+          <LegendItem color={theme.colors.nutrition.protein} label="Protein" value={`${macroBalance.proteinG}g`} />
+          <LegendItem color={theme.colors.nutrition.fats} label="Fats" value={`${macroBalance.fatsG}g`} />
+          <LegendItem color={theme.colors.nutrition.carbs} label="Carbs" value={`${macroBalance.carbsG}g`} />
+        </View>
+      </Card>
 
       <Card style={styles.card}>
         <View style={styles.cardHeaderRow}>
@@ -307,15 +317,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: theme.fontFamily.sansSemiBold,
   },
-  chartRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.md,
-  },
-  chartCard: {
-    flex: 1,
-    gap: 2,
-  },
   chartSubLabel: {
     ...theme.text.caption,
     fontSize: 10,
@@ -337,30 +338,41 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: theme.colors.brandDark,
   },
-  donutRow: {
+  chartLabelsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
+    justifyContent: 'space-between',
+    marginTop: theme.spacing.xs,
   },
-  donutLegend: {
-    flex: 1,
-    gap: 4,
+  chartLabelText: {
+    ...theme.text.caption,
+    fontSize: 11,
+    color: theme.colors.textMuted,
+  },
+  donutWrap: {
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+  },
+  donutLegendRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.md,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   legendDot: {
-    width: 7,
-    height: 7,
+    width: 9,
+    height: 9,
     borderRadius: theme.radius.pill,
   },
   legendLabel: {
     ...theme.text.caption,
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.textSecondary,
-    flex: 1,
   },
   legendValue: {
     ...theme.text.caption,

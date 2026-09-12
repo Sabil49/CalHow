@@ -1,7 +1,9 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { theme } from '@/constants/theme';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface ProgressRingProps {
   /** 0-100 */
@@ -32,7 +34,26 @@ export function ProgressRing({
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, progress));
-  const offset = circumference * (1 - clamped / 100);
+
+  // Eases toward each new `progress` value instead of snapping the stroke
+  // to it every render — `progress` typically updates on a fast interval
+  // (e.g. the AI-analyzing screen's loading animation), and without this
+  // the ring visibly jumps in discrete steps rather than flowing smoothly.
+  const animatedProgress = useRef(new Animated.Value(clamped)).current;
+  useEffect(() => {
+    Animated.timing(animatedProgress, {
+      toValue: clamped,
+      duration: 350,
+      easing: Easing.out(Easing.ease),
+      // strokeDashoffset isn't animatable via the native driver.
+      useNativeDriver: false,
+    }).start();
+  }, [animatedProgress, clamped]);
+
+  const strokeDashoffset = animatedProgress.interpolate({
+    inputRange: [0, 100],
+    outputRange: [circumference, 0],
+  });
 
   return (
     <View style={{ width: size, height: size }}>
@@ -45,7 +66,7 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
           fill="none"
         />
-        <Circle
+        <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -53,7 +74,7 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={offset}
+          strokeDashoffset={strokeDashoffset}
           fill="none"
           rotation={-90}
           origin={`${size / 2}, ${size / 2}`}

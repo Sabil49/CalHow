@@ -85,7 +85,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.lg,
+    // No horizontal padding here — AppHeader is always rendered inside
+    // ScreenContainer, which already applies paddingHorizontal to its
+    // content area (see components/ui/ScreenContainer.tsx's `padded`
+    // style). Adding it again here pushed the back button further right
+    // than the card content below it on every screen.
     paddingVertical: theme.spacing.sm,
   },
   side: {

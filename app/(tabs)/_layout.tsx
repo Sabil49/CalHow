@@ -21,7 +21,7 @@ export default function TabsLayout() {
     <AuthGuard>
       <Tabs>
         <TabSlot />
-        <TabList style={[tabBarStyles.container, { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) }]}>
+        <TabList style={[tabBarStyles.container, { marginBottom: Math.max(insets.bottom, theme.spacing.md) }]}>
           <TabTrigger name="index" href="/" asChild>
             <TabBarButton icon="home" label="Home" />
           </TabTrigger>

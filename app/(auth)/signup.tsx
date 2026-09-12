@@ -7,10 +7,12 @@ import { AppHeader } from '@/components/navigation/AppHeader';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
+import { HeroGlow } from '@/components/ui/HeroGlow';
 import { SocialAuthButton } from '@/components/forms/SocialAuthButton';
 import { PasswordChecklist } from '@/components/forms/PasswordChecklist';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { signUpWithEmail, SOCIAL_AUTH_ENABLED } from '@/services/auth';
+import { useSocialAuth } from '@/hooks/useSocialAuth';
+import { signUpWithEmail } from '@/services/auth';
 import { theme } from '@/constants/theme';
 
 export default function SignupScreen() {
@@ -32,6 +34,22 @@ export default function SignupScreen() {
     await signUpWithEmail({ fullName: fullName.trim(), email: email.trim(), password });
     router.replace('/onboarding/goal-setup');
   });
+
+  const {
+    signInWithGoogle,
+    signInWithApple,
+    googleLoading,
+    appleLoading,
+    appleAvailable,
+    error: socialError,
+  } = useSocialAuth();
+
+  async function handleGoogle() {
+    if (await signInWithGoogle()) router.replace('/');
+  }
+  async function handleApple() {
+    if (await signInWithApple()) router.replace('/');
+  }
 
   const fieldErrors = useMemo(() => {
     if (!touched) return {};
@@ -55,7 +73,10 @@ export default function SignupScreen() {
             Join CalHow and take the first step towards a <Text style={styles.subtitleAccent}>healthier</Text> you.
           </Text>
         </View>
-        <FoodHeroImage size={100} />
+        <View style={styles.heroWrap}>
+          <HeroGlow size={150} style={styles.heroGlow} />
+          <FoodHeroImage size={100} />
+        </View>
       </View>
 
       <View style={styles.card}>
@@ -91,10 +112,10 @@ export default function SignupScreen() {
           error={fieldErrors.confirmPassword}
         />
 
-        {error && (
+        {(error || socialError) && (
           <View style={styles.errorBanner}>
             <Feather name="alert-circle" size={14} color={theme.colors.error} />
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorText}>{error || socialError}</Text>
           </View>
         )}
 
@@ -107,9 +128,10 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.circleRow}>
-          <SocialAuthButton provider="google" variant="circle" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
-          <SocialAuthButton provider="apple" variant="circle" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
-          <SocialAuthButton provider="facebook" variant="circle" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
+          <SocialAuthButton provider="google" variant="circle" onPress={handleGoogle} loading={googleLoading} disabled={appleLoading} />
+          {appleAvailable && (
+            <SocialAuthButton provider="apple" variant="circle" onPress={handleApple} loading={appleLoading} disabled={googleLoading} />
+          )}
         </View>
       </View>
 
@@ -124,6 +146,14 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
+  heroWrap: {
+    position: 'relative',
+  },
+  heroGlow: {
+    position: 'absolute',
+    top: -25,
+    left: -25,
+  },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',

@@ -1,5 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { theme } from '@/constants/theme';
@@ -18,12 +21,34 @@ import { LeafAccent } from '@/components/ui/LeafAccent';
  *
  * (The native OS launch splash — the one shown before any JS runs — is
  * configured separately in app.json / expo-splash-screen in app/_layout.tsx.)
+ *
+ * MINIMUM_VISIBLE_MS enforces a floor on how long this screen stays on
+ * screen. Without it, a returning user with an already-cached Firebase
+ * session resolves `initializing`/`profileLoading` in well under one
+ * frame, so this branded screen (tagline, hero photo, progress bar, tip)
+ * could redirect away before a human ever perceives it rendered at all.
  */
+const MINIMUM_VISIBLE_MS = 900;
+
 export default function Index() {
   const { user, initializing } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
+  const [minDurationElapsed, setMinDurationElapsed] = useState(false);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
-  const resolved = !initializing && !(user && profileLoading);
+  useEffect(() => {
+    const timer = setTimeout(() => setMinDurationElapsed(true), MINIMUM_VISIBLE_MS);
+    Animated.timing(progressAnim, {
+      toValue: 100,
+      duration: MINIMUM_VISIBLE_MS,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: false, // animating a `width` percentage isn't supported by the native driver
+    }).start();
+    return () => clearTimeout(timer);
+  }, [progressAnim]);
+
+  const resolved = !initializing && !(user && profileLoading) && minDurationElapsed;
 
   if (resolved) {
     if (!user) return <Redirect href="/(auth)/welcome" />;
@@ -32,7 +57,10 @@ export default function Index() {
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={theme.gradients.screenBackground}
+      style={[styles.container, { paddingTop: insets.top + theme.spacing.lg }]}
+    >
       <LeafAccent size={26} rotation={-15} style={styles.leafTopLeft} />
       <LeafAccent size={22} rotation={20} style={styles.leafTopRight} />
 
@@ -45,28 +73,28 @@ export default function Index() {
       </View>
 
       <View style={styles.heroWrap}>
-        <FoodHeroImage size={320} style={styles.hero} />
+        <FoodHeroImage width="100%" height="100%" style={styles.hero} />
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: theme.spacing['2xl'] + insets.bottom }]}>
         <View style={styles.progressTrack}>
-          <View style={styles.progressFill} />
+          <Animated.View
+            style={[styles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }]}
+          />
         </View>
         <Text style={styles.tip}>
           <Text style={styles.tipLabel}>Tip: </Text>
           Small steps every day lead to big changes.
         </Text>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
     justifyContent: 'space-between',
-    paddingTop: theme.spacing['4xl'],
   },
   leafTopLeft: {
     position: 'absolute',
@@ -92,15 +120,15 @@ const styles = StyleSheet.create({
     color: theme.colors.brandPrimary,
   },
   heroWrap: {
-    alignItems: 'center',
     flex: 1,
-    justifyContent: 'flex-end',
+    paddingHorizontal: theme.spacing.xl,
+    paddingBottom: theme.spacing.lg,
   },
   hero: {
     borderTopLeftRadius: theme.radius['2xl'],
     borderTopRightRadius: theme.radius['2xl'],
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    borderBottomLeftRadius: theme.radius['2xl'],
+    borderBottomRightRadius: theme.radius['2xl'],
   },
   footer: {
     paddingHorizontal: theme.spacing['2xl'],
@@ -115,7 +143,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border,
   },
   progressFill: {
-    width: '55%',
     height: '100%',
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.brandPrimary,

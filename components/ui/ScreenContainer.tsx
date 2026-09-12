@@ -1,6 +1,7 @@
 import React from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/constants/theme';
 
 interface ScreenContainerProps {
@@ -32,32 +33,37 @@ export function ScreenContainer({
   noPadding = false,
 }: ScreenContainerProps) {
   return (
-    <SafeAreaView style={[styles.safeArea, style]} edges={edges}>
-      {scroll ? (
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-        >
-          <ScrollView
-            contentContainerStyle={[styles.content, !noPadding && styles.padded, contentStyle]}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+    <LinearGradient colors={theme.gradients.screenBackground} style={styles.gradient}>
+      <SafeAreaView style={[styles.safeArea, style]} edges={edges}>
+        {scroll ? (
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
           >
-            {children}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      ) : (
-        <View style={[styles.content, !noPadding && styles.padded, contentStyle]}>{children}</View>
-      )}
-    </SafeAreaView>
+            <ScrollView
+              contentContainerStyle={[styles.content, !noPadding && styles.padded, contentStyle]}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          </KeyboardAvoidingView>
+        ) : (
+          <View style={[styles.content, !noPadding && styles.padded, contentStyle]}>{children}</View>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'transparent',
   },
   flex: {
     flex: 1,

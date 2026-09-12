@@ -18,6 +18,12 @@ export function periodToDays(period: ProgressPeriod): number {
 function mealsInPeriod(meals: Meal[], days: number): Meal[] {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
+  // Align to the start of that calendar day, not "N days ago at the
+  // current time" — otherwise a meal logged earlier in the day than the
+  // current wall-clock time on the oldest included day gets silently
+  // excluded, so the same range under-counts depending on what time of
+  // day you happen to open Progress.
+  cutoff.setHours(0, 0, 0, 0);
   return meals.filter((m) => m.loggedAt >= cutoff);
 }
 
@@ -101,6 +107,7 @@ export function bucketCaloriesForChart(meals: Meal[], period: ProgressPeriod): C
   // Month / 3 Months / Year: split into ~8 equal-width buckets and average.
   const bucketCount = 8;
   const bucketSizeDays = days / bucketCount;
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
   const buckets: ChartBucket[] = [];
   for (let i = 0; i < bucketCount; i++) {
     const end = new Date();
@@ -110,7 +117,8 @@ export function bucketCaloriesForChart(meals: Meal[], period: ProgressPeriod): C
     const bucketMeals = periodMeals.filter((m) => m.loggedAt >= start && m.loggedAt < end);
     const totalKcal = bucketMeals.reduce((sum, m) => sum + m.calories, 0);
     const daysInBucket = Math.max(1, Math.round(bucketSizeDays));
-    buckets.unshift({ label: '', value: Math.round(totalKcal / daysInBucket) });
+    const midpoint = new Date((start.getTime() + end.getTime()) / 2);
+    buckets.unshift({ label: dateFmt.format(midpoint), value: Math.round(totalKcal / daysInBucket) });
   }
   return buckets;
 }

@@ -1,17 +1,28 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { AppHeader } from '@/components/navigation/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
+import { HeroGlow } from '@/components/ui/HeroGlow';
 import { LeafAccent } from '@/components/ui/LeafAccent';
 import { PrivacyNote } from '@/components/ui/PrivacyNote';
 import { SocialAuthButton } from '@/components/forms/SocialAuthButton';
-import { SOCIAL_AUTH_ENABLED } from '@/services/auth';
+import { useSocialAuth } from '@/hooks/useSocialAuth';
 import { theme } from '@/constants/theme';
 
 export default function SocialLoginScreen() {
+  const { signInWithGoogle, signInWithApple, googleLoading, appleLoading, appleAvailable, error } = useSocialAuth();
+
+  async function handleGoogle() {
+    if (await signInWithGoogle()) router.replace('/');
+  }
+  async function handleApple() {
+    if (await signInWithApple()) router.replace('/');
+  }
+
   return (
     <ScreenContainer>
       <AppHeader left="back" onLeftPress={() => router.back()} />
@@ -23,7 +34,10 @@ export default function SocialLoginScreen() {
             Sign in or create an account to personalize your <Text style={styles.subtitleAccent}>nutrition journey</Text>.
           </Text>
         </View>
-        <FoodHeroImage size={110} />
+        <View style={styles.heroWrap}>
+          <HeroGlow size={160} style={styles.heroGlow} />
+          <FoodHeroImage size={110} />
+        </View>
       </View>
 
       <LeafAccent style={styles.leaf} rotation={15} />
@@ -36,11 +50,17 @@ export default function SocialLoginScreen() {
         </View>
 
         <View style={styles.socialList}>
-          <SocialAuthButton provider="google" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
-          <SocialAuthButton provider="apple" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
-          <SocialAuthButton provider="facebook" onPress={() => {}} disabled={!SOCIAL_AUTH_ENABLED} />
+          <SocialAuthButton provider="google" onPress={handleGoogle} loading={googleLoading} disabled={appleLoading} />
+          {appleAvailable && (
+            <SocialAuthButton provider="apple" onPress={handleApple} loading={appleLoading} disabled={googleLoading} />
+          )}
         </View>
-        {!SOCIAL_AUTH_ENABLED && <Text style={styles.socialNote}>Social sign-in is coming soon — use email for now.</Text>}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Feather name="alert-circle" size={14} color={theme.colors.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
@@ -62,6 +82,14 @@ export default function SocialLoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  heroWrap: {
+    position: 'relative',
+  },
+  heroGlow: {
+    position: 'absolute',
+    top: -25,
+    left: -25,
+  },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -113,10 +141,17 @@ const styles = StyleSheet.create({
   socialList: {
     gap: theme.spacing.sm,
   },
-  socialNote: {
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    backgroundColor: theme.colors.errorBg,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+  },
+  errorText: {
     ...theme.text.caption,
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
+    color: theme.colors.error,
+    flex: 1,
   },
 });

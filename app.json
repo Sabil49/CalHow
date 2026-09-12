@@ -12,6 +12,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.calhow.app",
+      "usesAppleSignIn": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "CalHow needs camera access so you can scan your meals for AI nutrition analysis.",
         "NSPhotoLibraryUsageDescription": "CalHow needs photo library access so you can pick a meal photo to analyze.",
@@ -20,6 +22,7 @@
     },
     "android": {
       "package": "com.calhow.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -40,6 +43,15 @@
       "expo-router",
       "expo-font",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#FBF7EF"
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "CalHow needs camera access so you can scan your meals for AI nutrition analysis."
@@ -50,7 +62,15 @@
         {
           "photosPermission": "CalHow needs photo library access so you can pick a meal photo to analyze."
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#5E8E24"
+        }
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true

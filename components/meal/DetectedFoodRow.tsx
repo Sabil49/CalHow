@@ -29,7 +29,9 @@ export function DetectedFoodRow({ food, editable = false, onEdit, onDelete }: De
           {food.name}
         </Text>
         <View style={styles.metaRow}>
-          <Text style={styles.portion}>{food.portionLabel}</Text>
+          <Text style={styles.portion} numberOfLines={1} ellipsizeMode="tail">
+            {food.portionLabel}
+          </Text>
           <Text style={styles.dot}>•</Text>
           <Text style={styles.kcal}>{food.calories} kcal</Text>
         </View>
@@ -84,6 +86,7 @@ const styles = StyleSheet.create({
   portion: {
     ...theme.text.caption,
     color: theme.colors.textSecondary,
+    flexShrink: 1,
   },
   dot: {
     color: theme.colors.textMuted,
@@ -92,6 +95,7 @@ const styles = StyleSheet.create({
   kcal: {
     ...theme.text.caption,
     color: theme.colors.textSecondary,
+    flexShrink: 0,
   },
   confidenceCol: {
     alignItems: 'flex-end',

@@ -6,6 +6,8 @@ import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { CalHowLogo } from '@/components/ui/CalHowLogo';
 import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
+import { HeroGlow } from '@/components/ui/HeroGlow';
+import { LeafAccent } from '@/components/ui/LeafAccent';
 import { PrivacyNote } from '@/components/ui/PrivacyNote';
 import { theme } from '@/constants/theme';
 
@@ -32,8 +34,11 @@ const FEATURES: { icon: keyof typeof Feather.glyphMap; tint: string; title: stri
 
 export default function WelcomeScreen() {
   return (
-    <ScreenContainer edges={['top', 'bottom']}>
-      <CalHowLogo markSize={24} textSize={theme.fontSize.lg} style={styles.logoRow} />
+    <ScreenContainer edges={['top', 'bottom']} noPadding>
+      <View style={styles.topRow}>
+        <CalHowLogo markSize={24} textSize={theme.fontSize.lg} />
+        <LeafAccent size={22} rotation={20} />
+      </View>
 
       <Text style={styles.heading}>
         Welcome to{'\n'}
@@ -44,22 +49,24 @@ export default function WelcomeScreen() {
         habits.
       </Text>
 
-      <View style={styles.body}>
-        <View style={styles.featureList}>
-          {FEATURES.map((feature) => (
-            <View key={feature.title} style={styles.featureRow}>
-              <View style={[styles.featureIcon, { backgroundColor: feature.tint }]}>
-                <Feather name={feature.icon} size={18} color={theme.colors.brandDark} />
-              </View>
-              <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
-              </View>
+      <View style={styles.featureList}>
+        {FEATURES.map((feature) => (
+          <View key={feature.title} style={styles.featureRow}>
+            <View style={[styles.featureIcon, { backgroundColor: feature.tint }]}>
+              <Feather name={feature.icon} size={18} color={theme.colors.brandDark} />
             </View>
-          ))}
-        </View>
+            <View style={styles.featureText}>
+              <Text style={styles.featureTitle}>{feature.title}</Text>
+              <Text style={styles.featureDescription}>{feature.description}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
 
-        <FoodHeroImage size={140} style={styles.hero} />
+      <View style={styles.heroWrap}>
+        <HeroGlow size={280} style={styles.heroGlow} />
+        <LeafAccent size={20} rotation={-15} style={styles.heroLeaf} />
+        <FoodHeroImage size={220} bleedRight style={styles.hero} />
       </View>
 
       <View style={styles.actions}>
@@ -77,13 +84,18 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  logoRow: {
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
   },
   heading: {
     ...theme.text.displayHeading,
     color: theme.colors.textPrimary,
     marginTop: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
   },
   headingAccent: {
     color: theme.colors.brandPrimary,
@@ -93,18 +105,16 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.md,
     maxWidth: '90%',
-  },
-  body: {
-    flexDirection: 'row',
-    marginTop: theme.spacing['2xl'],
-    gap: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
   },
   featureList: {
-    flex: 1,
     gap: theme.spacing.lg,
+    marginTop: theme.spacing['2xl'],
+    paddingHorizontal: theme.spacing.lg,
   },
   featureRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: theme.spacing.sm,
   },
   featureIcon: {
@@ -126,12 +136,31 @@ const styles = StyleSheet.create({
     ...theme.text.caption,
     color: theme.colors.textSecondary,
   },
-  hero: {
-    marginTop: theme.spacing.xxs,
+  // Deliberately NOT padded horizontally on the right — this is what lets
+  // the hero photo (bleedRight, squared-off right corners) bleed all the
+  // way to the screen edge like the PDF reference, instead of stopping
+  // short at ScreenContainer's usual inset.
+  heroWrap: {
+    position: 'relative',
+    alignItems: 'flex-end',
+    marginTop: theme.spacing.lg,
   },
+  heroGlow: {
+    position: 'absolute',
+    top: -30,
+    right: 40,
+  },
+  heroLeaf: {
+    position: 'absolute',
+    top: -10,
+    left: theme.spacing.lg,
+    zIndex: 1,
+  },
+  hero: {},
   actions: {
     marginTop: theme.spacing['2xl'],
     gap: theme.spacing.sm,
     paddingBottom: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
   },
 });

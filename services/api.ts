@@ -19,7 +19,7 @@ import type {
  * client-supplied uid.
  */
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
+const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL ?? '').replace(/\/+$/, '');
 
 export class ApiError extends Error {
   code: string;

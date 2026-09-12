@@ -27,7 +27,7 @@ export type ProFeature = keyof typeof PRO_FEATURES;
  * see app/scan/analyzing.tsx, which routes to /paywall only when the
  * backend responds with the `scan_limit_reached` error code.
  */
-export const FREE_DAILY_SCAN_LIMIT = 3;
+export const FREE_DAILY_SCAN_LIMIT = 10;
 
 /**
  * Client-side/local Pro signal, sourced from RevenueCat's live

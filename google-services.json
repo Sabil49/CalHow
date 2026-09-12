@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "646821894397",
+    "project_id": "calhow-712c0",
+    "storage_bucket": "calhow-712c0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:646821894397:android:032142d74803c773854694",
+        "android_client_info": {
+          "package_name": "com.calhow.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "646821894397-6ip2dr4sf7cr0ar0lk8elsaaboak3qda.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCCYTqa2Itii5rt8tIO1qCTWQL0F3YoWw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "646821894397-6ip2dr4sf7cr0ar0lk8elsaaboak3qda.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "646821894397-s55gfsuphk82i8g8e8q1abmfumeapi6d.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.calhow.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

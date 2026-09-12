@@ -184,19 +184,12 @@ export default function CameraScreen() {
             <View style={styles.shutterInner} />
           </Pressable>
 
-          <Pressable
-            onPress={() => Alert.alert('Recent scans', 'Coming soon.')}
-            style={styles.sideButton}
-            accessibilityRole="button"
-            accessibilityLabel="Recent scans"
-          >
-            <Feather name="clock" size={20} color={theme.colors.textInverse} />
-          </Pressable>
+          <View style={styles.sideButton} />
         </View>
         <View style={styles.bottomLabels}>
           <Text style={styles.bottomLabelText}>Gallery</Text>
           <View style={{ width: 64 }} />
-          <Text style={styles.bottomLabelText}>Recent</Text>
+          <Text style={styles.bottomLabelText}></Text>
         </View>
       </SafeAreaView>
     </View>

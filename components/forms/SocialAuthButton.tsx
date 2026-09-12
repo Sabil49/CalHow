@@ -2,14 +2,23 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
+import { GoogleGlyph } from '@/components/ui/GoogleGlyph';
 
-export type SocialProvider = 'google' | 'apple' | 'facebook';
+export type SocialProvider = 'google' | 'apple';
 
 const PROVIDER_CONFIG: Record<SocialProvider, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
-  google: { icon: 'logo-google', color: '#EA4335', label: 'Google' },
+  // 'color' only drives the loading spinner (the icon itself is GoogleGlyph's
+  // real multi-color mark, unaffected by this) — Google's brand yellow reads
+  // as more "Google" than picking just one of its four colors at random.
+  google: { icon: 'logo-google', color: '#FBBC05', label: 'Google' },
   apple: { icon: 'logo-apple', color: '#000000', label: 'Apple' },
-  facebook: { icon: 'logo-facebook', color: '#1877F2', label: 'Facebook' },
 };
+
+function ProviderIcon({ provider, size, color }: { provider: SocialProvider; size: number; color: string }) {
+  // Google's brand mark is multi-color and can't be represented by a single-tint icon font glyph.
+  if (provider === 'google') return <GoogleGlyph size={size} />;
+  return <Ionicons name={PROVIDER_CONFIG[provider].icon} size={size} color={color} />;
+}
 
 interface SocialAuthButtonProps {
   provider: SocialProvider;
@@ -17,7 +26,7 @@ interface SocialAuthButtonProps {
   loading?: boolean;
   /** 'full': "Continue with Google" row (Social_Auth screen). 'circle': icon-only chip (Login/Signup screens). */
   variant?: 'full' | 'circle';
-  /** When true, the button is visually dimmed and cannot be pressed — use while a provider isn't actually wired up yet (see SOCIAL_AUTH_ENABLED in services/auth.ts). */
+  /** When true, the button is visually dimmed and cannot be pressed — used to disable one provider's button while the other's sign-in is in flight. */
   disabled?: boolean;
 }
 
@@ -36,10 +45,12 @@ export function SocialAuthButton({ provider, onPress, loading = false, variant =
           {loading ? (
             <ActivityIndicator size="small" color={config.color} />
           ) : (
-            <Ionicons name={config.icon} size={22} color={disabled ? theme.colors.textMuted : config.color} />
+            <View style={disabled && styles.iconDisabled}>
+              <ProviderIcon provider={provider} size={22} color={disabled ? theme.colors.textMuted : config.color} />
+            </View>
           )}
         </Pressable>
-        <Text style={styles.circleLabel}>{disabled ? 'Soon' : config.label}</Text>
+        <Text style={styles.circleLabel}>{config.label}</Text>
       </View>
     );
   }
@@ -54,11 +65,10 @@ export function SocialAuthButton({ provider, onPress, loading = false, variant =
         <ActivityIndicator size="small" color={theme.colors.textPrimary} />
       ) : (
         <>
-          <Ionicons name={config.icon} size={20} color={disabled ? theme.colors.textMuted : config.color} />
-          <Text style={[styles.fullLabel, disabled && styles.fullLabelDisabled]}>
-            Continue with {config.label}
-            {disabled ? ' (coming soon)' : ''}
-          </Text>
+          <View style={disabled && styles.iconDisabled}>
+            <ProviderIcon provider={provider} size={20} color={disabled ? theme.colors.textMuted : config.color} />
+          </View>
+          <Text style={[styles.fullLabel, disabled && styles.fullLabelDisabled]}>Continue with {config.label}</Text>
         </>
       )}
     </Pressable>
@@ -110,5 +120,8 @@ const styles = StyleSheet.create({
   circleLabel: {
     ...theme.text.caption,
     color: theme.colors.textSecondary,
+  },
+  iconDisabled: {
+    opacity: 0.5,
   },
 });
