@@ -19,7 +19,7 @@ export default function PrivacyScreen() {
 
       <Card style={styles.card}>
         <Section title="1. What this covers">
-          CalHow is operated by MyZoApp ("the App", "we"). This Privacy Policy explains what information CalHow
+          CalHow is operated by myzoapp ("the App", "we"). This Privacy Policy explains what information CalHow
           collects when you use the app, how it's used, and the choices you have. CalHow is currently in beta
           testing.
         </Section>

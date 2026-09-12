@@ -19,7 +19,7 @@ export default function TermsScreen() {
 
       <Card style={styles.card}>
         <Section title="1. Acceptance">
-          CalHow is operated by MyZoApp ("we", "us"). By using CalHow, you agree to these Terms. CalHow is currently
+          CalHow is operated by myzoapp ("we", "us"). By using CalHow, you agree to these Terms. CalHow is currently
           in beta — features, limits, and pricing may change before a public release.
         </Section>
 

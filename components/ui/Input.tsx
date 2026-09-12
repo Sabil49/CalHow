@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: theme.radius.md,
     paddingHorizontal: theme.spacing.md,
-    minHeight: 52,
+    minHeight: 56,
   },
   fieldFocused: {
     borderColor: theme.colors.brandPrimary,
@@ -106,7 +106,10 @@ const styles = StyleSheet.create({
     flex: 1,
     ...theme.text.body,
     color: theme.colors.textPrimary,
-    paddingVertical: theme.spacing.sm,
+    // Asymmetric — extra room at the bottom so descenders (g, y, p) on
+    // custom fonts don't get clipped against the field's rounded edge.
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
   },
   errorText: {
     ...theme.text.caption,

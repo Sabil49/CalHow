@@ -22,13 +22,14 @@ const HIGHLIGHTS: { icon: keyof typeof Feather.glyphMap; title: string; subtitle
 /**
  * `live: false` entries are V2 features that don't exist in this codebase
  * yet — shown dimmed with a "Coming soon" badge rather than hidden, so the
- * paywall doesn't misrepresent what a Pro subscriber gets today. Only
- * `live: true` features are ever actually gated/enforced anywhere (see
- * calhow-backend/services/usage — the free scan quota is the only real
- * Free/Pro difference in this backend right now).
+ * paywall doesn't misrepresent what a Pro subscriber gets today. Every
+ * feature is currently `live: false`, including unlimited scans — Pro
+ * purchasing itself is disabled during the beta (see the "Coming soon"
+ * card below), so nothing on this screen should read as available yet,
+ * even a feature that's technically implemented behind the scenes.
  */
 const PRO_FEATURES: { icon: keyof typeof Feather.glyphMap; title: string; description: string; live: boolean }[] = [
-  { icon: 'repeat', title: 'Unlimited AI Food Scans', description: 'Scan as many meals as you want, anytime, without daily limits.', live: true },
+  { icon: 'repeat', title: 'Unlimited AI Food Scans', description: 'Scan as many meals as you want, anytime, without daily limits.', live: false },
   { icon: 'cpu', title: 'Smart Meal Memory', description: 'CalHow remembers your corrections, portions and foods to give better results over time.', live: false },
   { icon: 'zap', title: 'AI Meal Insights', description: 'Get deeper AI analysis and personalized nutrition insights for every meal.', live: false },
   { icon: 'bar-chart-2', title: 'Advanced Progress Analytics', description: 'Explore detailed charts, trends and correlations to understand your journey better.', live: false },

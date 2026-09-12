@@ -100,12 +100,12 @@ export default function MealSavedScreen() {
               </Text>
             </View>
           </View>
-          <View style={[styles.addAnotherButton, styles.addAnotherButtonDisabled]}>
-            <Feather name="plus" size={14} color={theme.colors.textMuted} />
-            <Text style={[styles.addAnotherText, styles.addAnotherTextDisabled]} numberOfLines={1}>
-              Add to another meal — Coming soon
-            </Text>
-          </View>
+        </View>
+        <View style={[styles.addAnotherButton, styles.addAnotherButtonDisabled]}>
+          <Feather name="plus" size={14} color={theme.colors.textMuted} />
+          <Text style={[styles.addAnotherText, styles.addAnotherTextDisabled]} numberOfLines={1}>
+            Add to another meal — Coming soon
+          </Text>
         </View>
       </Card>
 
@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
   },
   savedToRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: theme.spacing.sm,
   },
   savedToIcon: {
@@ -247,11 +246,13 @@ const styles = StyleSheet.create({
   addAnotherButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 4,
     backgroundColor: theme.colors.brandTint,
     borderRadius: theme.radius.pill,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
   },
   addAnotherButtonDisabled: {
     backgroundColor: theme.colors.border,
