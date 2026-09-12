@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "backgroundColor": "#FBF7EF",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.calhow.app",
       "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",
