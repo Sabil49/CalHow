@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -127,6 +128,7 @@ export function TargetsSection({
               recommended for steady and sustainable results.
             </Text>
           </View>
+          <SourcesLink />
         </Card>
       )}
 
@@ -151,8 +153,19 @@ export function TargetsSection({
           <Feather name="zap" size={14} color={theme.colors.brandDark} />
           <Text style={styles.tipText}>This may adjust as you log more meals and activities.</Text>
         </View>
+        <SourcesLink />
       </Card>
     </>
+  );
+}
+
+/** Points at the citations for the calorie/pace numbers shown above — kept next to the claim per App Store guideline 1.4.1. */
+function SourcesLink() {
+  return (
+    <Pressable style={styles.sourcesLink} onPress={() => router.push('/settings/sources')}>
+      <Feather name="info" size={12} color={theme.colors.textMuted} />
+      <Text style={styles.sourcesLinkText}>How is this calculated? Sources & Citations</Text>
+    </Pressable>
   );
 }
 
@@ -191,6 +204,18 @@ const styles = StyleSheet.create({
   tipAccent: {
     color: theme.colors.brandDark,
     fontFamily: theme.fontFamily.sansSemiBold,
+  },
+  sourcesLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+  },
+  sourcesLinkText: {
+    ...theme.text.caption,
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    textDecorationLine: 'underline',
   },
   paceTrack: {
     flexDirection: 'row',

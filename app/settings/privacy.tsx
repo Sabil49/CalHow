@@ -60,7 +60,12 @@ export default function PrivacyScreen() {
 
         <Section title="6. Health information notice">
           CalHow's nutrition estimates are AI-generated approximations from a photo, not a medical or clinical
-          measurement. Don't use CalHow as a substitute for professional medical, nutritional, or dietary advice.
+          measurement. Calorie, macro and pace targets are calculated from public health formulas and guidance —
+          see{' '}
+          <Text style={styles.linkInline} onPress={() => router.push('/settings/sources')}>
+            Sources & Citations
+          </Text>{' '}
+          for details — and are not a substitute for professional medical, nutritional, or dietary advice.
         </Section>
 
         <Section title="7. Data retention">
@@ -136,6 +141,11 @@ const styles = StyleSheet.create({
   sectionBody: {
     ...theme.text.body,
     color: theme.colors.textSecondary,
+  },
+  linkInline: {
+    color: theme.colors.brandDark,
+    fontFamily: theme.fontFamily.sansSemiBold,
+    textDecorationLine: 'underline',
   },
   lastUpdated: {
     ...theme.text.caption,

@@ -10,6 +10,7 @@ import { useIsPro } from '@/hooks/useFeatureGate';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { signOut } from '@/services/auth';
 import { theme } from '@/constants/theme';
+import { SHOW_COMING_SOON_FEATURES } from '@/constants/featureFlags';
 
 export default function ProfileScreen() {
   const { profile } = useUserProfile();
@@ -82,8 +83,12 @@ export default function ProfileScreen() {
       <Card style={styles.card}>
         <SettingsRow icon="user" title="Personal Information" subtitle="Update your name, email and more" onPress={() => router.push('/settings/personal-information')} />
         <SettingsRow icon="lock" title="Change Password" subtitle="Update your account password" onPress={() => router.push('/settings/change-password')} />
-        <SettingsRow icon="shield" title="Security" subtitle="Manage 2FA and login security" onPress={() => {}} disabled />
-        <SettingsRow icon="award" title="CalHow Pro" subtitle="Manage your subscription and billing" onPress={() => router.push('/paywall')} />
+        {SHOW_COMING_SOON_FEATURES && (
+          <SettingsRow icon="shield" title="Security" subtitle="Manage 2FA and login security" onPress={() => {}} disabled />
+        )}
+        {SHOW_COMING_SOON_FEATURES && (
+          <SettingsRow icon="award" title="CalHow Pro" subtitle="Manage your subscription and billing" onPress={() => router.push('/paywall')} />
+        )}
         <SettingsRow icon="database" title="Account & Data" subtitle="View your data, delete your account" onPress={() => router.push('/settings/account-data')} />
       </Card>
 
@@ -97,9 +102,14 @@ export default function ProfileScreen() {
 
       <Text style={styles.sectionHeading}>General</Text>
       <Card style={styles.card}>
-        <SettingsRow icon="droplet" title="Appearance" subtitle="Theme, colors and app icon" onPress={() => {}} disabled />
-        <SettingsRow icon="globe" title="Language" trailingText="English" onPress={() => {}} disabled />
+        {SHOW_COMING_SOON_FEATURES && (
+          <SettingsRow icon="droplet" title="Appearance" subtitle="Theme, colors and app icon" onPress={() => {}} disabled />
+        )}
+        {SHOW_COMING_SOON_FEATURES && (
+          <SettingsRow icon="globe" title="Language" trailingText="English" onPress={() => {}} disabled />
+        )}
         <SettingsRow icon="help-circle" title="Help & Support" subtitle="FAQs, contact us and more" onPress={() => router.push('/settings/help-support')} />
+        <SettingsRow icon="book-open" title="Sources & Citations" subtitle="Where our calorie & nutrition numbers come from" onPress={() => router.push('/settings/sources')} />
         <SettingsRow icon="file-text" title="Terms & Policies" subtitle="Privacy policy, terms of use and more" onPress={() => router.push('/settings/terms')} />
       </Card>
 

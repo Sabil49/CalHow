@@ -12,6 +12,7 @@ import { useScanSession } from '@/hooks/useScanSession';
 import { getMeal } from '@/services/firestore';
 import { generateMealInsight } from '@/utils/mealInsights';
 import { theme } from '@/constants/theme';
+import { SHOW_COMING_SOON_FEATURES } from '@/constants/featureFlags';
 import type { Meal } from '@/types/models';
 
 export default function MealSavedScreen() {
@@ -101,12 +102,14 @@ export default function MealSavedScreen() {
             </View>
           </View>
         </View>
-        <View style={[styles.addAnotherButton, styles.addAnotherButtonDisabled]}>
-          <Feather name="plus" size={14} color={theme.colors.textMuted} />
-          <Text style={[styles.addAnotherText, styles.addAnotherTextDisabled]} numberOfLines={1}>
-            Add to another meal — Coming soon
-          </Text>
-        </View>
+        {SHOW_COMING_SOON_FEATURES && (
+          <View style={[styles.addAnotherButton, styles.addAnotherButtonDisabled]}>
+            <Feather name="plus" size={14} color={theme.colors.textMuted} />
+            <Text style={[styles.addAnotherText, styles.addAnotherTextDisabled]} numberOfLines={1}>
+              Add to another meal — Coming soon
+            </Text>
+          </View>
+        )}
       </Card>
 
       <Card style={styles.card}>
