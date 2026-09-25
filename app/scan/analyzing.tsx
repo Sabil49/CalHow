@@ -11,8 +11,6 @@ import { Button } from '@/components/ui/Button';
 import { NutritionMetric } from '@/components/nutrition/NutritionMetric';
 import { useScanSession } from '@/hooks/useScanSession';
 import { analyzeMeal, ApiError } from '@/services/api';
-import { FREE_DAILY_SCAN_LIMIT } from '@/hooks/useFeatureGate';
-import { SHOW_COMING_SOON_FEATURES } from '@/constants/featureFlags';
 import { theme } from '@/constants/theme';
 
 const SCAN_STEPS = [
@@ -83,16 +81,9 @@ export default function AnalyzingScreen() {
         // The backend is the sole source of truth for the free-tier scan
         // limit (see calhow-backend/services/usage/scanLimit.ts) — this
         // app never decides "you're out of scans" itself. When the
-        // backend says so, send the user to the Pro paywall — except
-        // during the V1 beta (SHOW_COMING_SOON_FEATURES off, Pro isn't
-        // purchasable yet), where that screen would just be a "Coming
-        // soon" dead end, so show an honest limit message instead.
+        // backend says so, send the user to the Pro paywall.
         if (err instanceof ApiError && err.code === 'scan_limit_reached') {
-          if (SHOW_COMING_SOON_FEATURES) {
-            router.replace('/paywall');
-          } else {
-            setError(`You've used all ${FREE_DAILY_SCAN_LIMIT} free scans for today. Come back tomorrow for more!`);
-          }
+          router.replace('/paywall');
           return;
         }
         if (err instanceof ApiError) {

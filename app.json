@@ -78,8 +78,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d2023da4-b717-4910-b64f-2401342ac5f5"
-      }
+        "projectId": "342e37ee-6b87-46ab-a352-66a2eeff3374"
+      },
+      "owner": "myzoapp"
     }
   }
 }

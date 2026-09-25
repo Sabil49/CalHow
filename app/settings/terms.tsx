@@ -19,8 +19,8 @@ export default function TermsScreen() {
 
       <Card style={styles.card}>
         <Section title="1. Acceptance">
-          CalHow is operated by myzoapp ("we", "us"). By using CalHow, you agree to these Terms. CalHow is currently
-          in beta — features, limits, and pricing may change before a public release.
+          CalHow is operated by myzoapp ("we", "us"). By using CalHow, you agree to these Terms. Features, limits,
+          and pricing may change over time as the app evolves.
         </Section>
 
         <Section title="2. Who can use CalHow">
@@ -47,10 +47,9 @@ export default function TermsScreen() {
           solely to provide the app's features to you.
         </Section>
 
-        <Section title="6. Free usage and CalHow Pro">
-          CalHow currently offers a daily limit on free AI meal scans (shown in-app; temporarily raised during beta
-          testing). CalHow Pro subscriptions are planned but not yet available for purchase — nothing in the current
-          app will charge you.
+        <Section title="6. Free usage">
+          CalHow offers a daily limit on free AI meal scans, shown in-app. Nothing in the current app will charge
+          you.
         </Section>
 
         <Section title="7. Acceptable use">
@@ -64,7 +63,7 @@ export default function TermsScreen() {
         </Section>
 
         <Section title="9. Governing law and disputes">
-          CalHow is provided "as is" during this beta period, without warranties of any kind. These Terms are
+          CalHow is provided "as is", without warranties of any kind. These Terms are
           governed by the laws of India, and any dispute is subject to the exclusive jurisdiction of the courts of
           New Delhi, India. To the maximum extent permitted by law, CalHow and its developer are not liable for any
           indirect, incidental, or consequential damages arising from your use of the app, including decisions made

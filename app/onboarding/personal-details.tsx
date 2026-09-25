@@ -42,7 +42,11 @@ export default function PersonalDetailsScreen() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
 
-  const [fullName, setFullName] = useState(profile?.fullName ?? '');
+  // No name field here: every sign-up path already supplies it (the email
+  // signup form, Google, or Apple's Authentication Services response), and
+  // App Store guideline 4 forbids re-asking a Sign in with Apple user for
+  // their name/email. It stays editable, optionally, in Settings → Personal
+  // Information.
   const [gender, setGender] = useState<Gender | undefined>(profile?.gender);
   const [dateOfBirth, setDateOfBirth] = useState(profile?.dateOfBirth);
   const [heightCm, setHeightCm] = useState(profile?.heightCm ? String(profile.heightCm) : '170');
@@ -89,7 +93,6 @@ export default function PersonalDetailsScreen() {
     const currentWeightKg = weightValue > 0 ? (preferredUnit === 'imperial' ? lbToKg(weightValue) : weightValue) : undefined;
 
     await updateUserProfile(user.uid, {
-      fullName: fullName.trim(),
       gender,
       dateOfBirth,
       heightCm: Number(heightCm) || undefined,
@@ -116,8 +119,6 @@ export default function PersonalDetailsScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardHeading}>Basic Information</Text>
-
-        <Input label="Full Name" icon="user" placeholder="Enter your full name" value={fullName} onChangeText={setFullName} autoCapitalize="words" />
 
         <SelectField label="Gender" icon="user" placeholder="Select your gender" value={gender} options={GENDER_OPTIONS} onChange={setGender} />
 

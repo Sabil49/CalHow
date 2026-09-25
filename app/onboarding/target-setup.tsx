@@ -63,7 +63,7 @@ export default function TargetSetupScreen() {
     [isPaceRelevant, currentWeightKg, targetWeightNumber, weeklyPaceKg],
   );
 
-  const { run: handleContinue, loading } = useAsyncAction(async () => {
+  const { run: handleContinue, loading, error } = useAsyncAction(async () => {
     if (!user) return;
     await updateUserProfile(user.uid, {
       goals: {
@@ -103,6 +103,8 @@ export default function TargetSetupScreen() {
         preferredUnit={profile?.preferredUnit ?? 'metric'}
       />
 
+      {error && <Text style={styles.errorText}>{error}</Text>}
+
       <View style={styles.footer}>
         <Button label="Continue" onPress={handleContinue} loading={loading} />
       </View>
@@ -128,6 +130,11 @@ const styles = StyleSheet.create({
   },
   subtitleAccent: {
     color: theme.colors.brandPrimary,
+  },
+  errorText: {
+    ...theme.text.caption,
+    color: theme.colors.error,
+    marginTop: theme.spacing.lg,
   },
   footer: {
     marginTop: theme.spacing.xl,

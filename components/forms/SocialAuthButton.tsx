@@ -3,13 +3,15 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
 import { GoogleGlyph } from '@/components/ui/GoogleGlyph';
+import { GoogleSpinner } from '@/components/ui/GoogleSpinner';
 
 export type SocialProvider = 'google' | 'apple';
 
 const PROVIDER_CONFIG: Record<SocialProvider, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
-  // 'color' only drives the loading spinner (the icon itself is GoogleGlyph's
-  // real multi-color mark, unaffected by this) — Google's brand yellow reads
-  // as more "Google" than picking just one of its four colors at random.
+  // 'color' is unused for google — its icon is GoogleGlyph's real
+  // multi-color mark and its loading state is GoogleSpinner, which has
+  // Google's four brand colors built in. Kept only because the shared
+  // config type requires every provider to have one (apple uses it for both).
   google: { icon: 'logo-google', color: '#FBBC05', label: 'Google' },
   apple: { icon: 'logo-apple', color: '#000000', label: 'Apple' },
 };
@@ -43,7 +45,7 @@ export function SocialAuthButton({ provider, onPress, loading = false, variant =
           style={({ pressed }) => [styles.circleButton, disabled && styles.circleButtonDisabled, { opacity: pressed ? 0.8 : 1 }]}
         >
           {loading ? (
-            <ActivityIndicator size="small" color={config.color} />
+            provider === 'google' ? <GoogleSpinner size={22} /> : <ActivityIndicator size="small" color={config.color} />
           ) : (
             <View style={disabled && styles.iconDisabled}>
               <ProviderIcon provider={provider} size={22} color={disabled ? theme.colors.textMuted : config.color} />
@@ -62,7 +64,7 @@ export function SocialAuthButton({ provider, onPress, loading = false, variant =
       style={({ pressed }) => [styles.fullButton, disabled && styles.fullButtonDisabled, { opacity: pressed ? 0.85 : 1 }]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+        provider === 'google' ? <GoogleSpinner size={20} /> : <ActivityIndicator size="small" color={theme.colors.textPrimary} />
       ) : (
         <>
           <View style={disabled && styles.iconDisabled}>

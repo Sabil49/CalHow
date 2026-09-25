@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, PermissionStatus, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,15 @@ export default function CameraScreen() {
   const [capturing, setCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const { setImage } = useScanSession();
+
+  // The system permission dialog must be the very next thing the user sees
+  // when it hasn't been asked yet — no custom screen with a way to dismiss
+  // it first (Apple Guideline 5.1.1(iv)).
+  useEffect(() => {
+    if (permission?.status === PermissionStatus.UNDETERMINED) {
+      requestPermission();
+    }
+  }, [permission?.status]);
 
   async function handleCapture() {
     if (!cameraRef.current || capturing) return;
@@ -74,26 +83,24 @@ export default function CameraScreen() {
     setFlash((f) => (f === 'auto' ? 'on' : f === 'on' ? 'off' : 'auto'));
   }
 
-  if (!permission) {
+  if (!permission || permission.status === PermissionStatus.UNDETERMINED) {
+    // The system dialog is being requested (see effect above); nothing to show
+    // in between that the user could use to dodge it.
     return <View style={styles.container} />;
   }
 
   if (!permission.granted) {
-    const permanentlyDenied = !permission.canAskAgain;
+    // We've already asked once (system dialog was shown and declined), so
+    // there's no permission request left to bypass here — only Settings
+    // can grant it from this point on.
     return (
       <SafeAreaView style={styles.permissionContainer}>
         <Feather name="camera-off" size={40} color={theme.colors.textSecondary} />
         <Text style={styles.permissionTitle}>Camera access needed</Text>
         <Text style={styles.permissionBody}>
-          {permanentlyDenied
-            ? 'Camera access is turned off for CalHow. Enable it in your device settings to scan meals.'
-            : 'CalHow needs your camera to scan meals and estimate their nutrition.'}
+          Camera access is turned off for CalHow. Enable it in your device settings to scan meals.
         </Text>
-        {permanentlyDenied ? (
-          <Button label="Open Settings" onPress={() => Linking.openSettings()} icon={null} />
-        ) : (
-          <Button label="Grant Camera Access" onPress={requestPermission} icon={null} />
-        )}
+        <Button label="Open Settings" onPress={() => Linking.openSettings()} icon={null} />
         <Button label="Not now" variant="ghost" icon={null} onPress={() => router.back()} />
       </SafeAreaView>
     );

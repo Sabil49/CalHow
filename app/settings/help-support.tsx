@@ -19,12 +19,7 @@ const FAQS: { question: string; answer: string }[] = [
   },
   {
     question: 'How many scans do I get per day?',
-    answer: `CalHow is currently in beta, so every account gets ${FREE_DAILY_SCAN_LIMIT} free AI scans per day (this is temporarily raised for beta testing). The count resets at midnight UTC.`,
-  },
-  {
-    question: 'Is CalHow Pro available right now?',
-    answer:
-      "Not yet — CalHow Pro subscriptions are disabled during the beta, so nothing in the app can charge you. Unlimited scans and other Pro features will open up in a future release.",
+    answer: `Every account gets ${FREE_DAILY_SCAN_LIMIT} free AI scans per day. The count resets at midnight UTC.`,
   },
   {
     question: 'Can I edit what the AI detected?',

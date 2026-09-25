@@ -12,7 +12,7 @@ import { theme } from '@/constants/theme';
 const defaultHeroSource = require('../../assets/food/hero-bowl.jpg');
 
 interface FoodHeroImageProps {
-  /** Real per-meal photo URL (e.g. a Cloudinary-hosted scan). Falls back to the bundled default bowl photo when omitted. */
+  /** Real per-meal photo URL (a Firebase Storage-hosted scan). Falls back to the bundled default bowl photo when omitted. */
   imageUri?: string;
   style?: StyleProp<ViewStyle>;
   /** Rounds only the bottom-left corner, matching the bleed-off-the-edge hero shots in the references. */

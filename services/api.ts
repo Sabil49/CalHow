@@ -12,10 +12,11 @@ import type {
 } from '@/types/api';
 
 /**
- * Thin client for the CalHow Next.js backend. This is the ONLY place the
- * app talks to AI meal analysis — the Expo app must never hold an AI
- * provider API key. The backend re-derives the caller's identity from the
- * Firebase ID token, so requests are attributable without trusting any
+ * Thin client for the CalHow Firebase Cloud Functions backend
+ * (calhow-backend/functions). This is the ONLY place the app talks to AI
+ * meal analysis — the Expo app must never hold an AI provider API key.
+ * The backend re-derives the caller's identity from the Firebase ID
+ * token, so requests are attributable without trusting any
  * client-supplied uid.
  */
 
@@ -36,7 +37,7 @@ async function authedFetch<TResponse>(path: string, body: unknown): Promise<TRes
     throw new ApiError(
       0,
       'missing_config',
-      'EXPO_PUBLIC_API_BASE_URL is not set. Point it at your deployed Next.js backend.',
+      'EXPO_PUBLIC_API_BASE_URL is not set. Point it at your deployed Cloud Functions backend.',
     );
   }
 
@@ -66,22 +67,22 @@ async function authedFetch<TResponse>(path: string, body: unknown): Promise<TRes
   return (await response.json()) as TResponse;
 }
 
-/** POST /api/meals/analyze — scan a meal photo and get an AI nutrition estimate. */
+/** POST /analyzeMeal — scan a meal photo and get an AI nutrition estimate. */
 export function analyzeMeal(payload: AnalyzeMealRequest) {
-  return authedFetch<AnalyzeMealResponse>('/api/meals/analyze', payload);
+  return authedFetch<AnalyzeMealResponse>('/analyzeMeal', payload);
 }
 
-/** POST /api/meals/clarify — submit answers to clarification questions. */
+/** POST /clarifyMeal — submit answers to clarification questions. */
 export function clarifyMeal(payload: ClarifyMealRequest) {
-  return authedFetch<ClarifyMealResponse>('/api/meals/clarify', payload);
+  return authedFetch<ClarifyMealResponse>('/clarifyMeal', payload);
 }
 
-/** POST /api/meals/recalculate — recompute totals after the user edits detected foods. */
+/** POST /recalculateMeal — recompute totals after the user edits detected foods. */
 export function recalculateMeal(payload: RecalculateMealRequest) {
-  return authedFetch<RecalculateMealResponse>('/api/meals/recalculate', payload);
+  return authedFetch<RecalculateMealResponse>('/recalculateMeal', payload);
 }
 
-/** POST /api/meals/image — upload a captured meal photo to durable remote storage, get back its URL. */
+/** POST /uploadMealImage — upload a captured meal photo to durable remote storage, get back its URL. */
 export function uploadMealImage(payload: UploadMealImageRequest) {
-  return authedFetch<UploadMealImageResponse>('/api/meals/image', payload);
+  return authedFetch<UploadMealImageResponse>('/uploadMealImage', payload);
 }

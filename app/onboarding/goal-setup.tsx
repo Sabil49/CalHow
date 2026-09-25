@@ -32,7 +32,7 @@ export default function GoalSetupScreen() {
     profile?.goals?.activityLevel ?? 'sedentary',
   );
 
-  const { run: handleContinue, loading } = useAsyncAction(async () => {
+  const { run: handleContinue, loading, error } = useAsyncAction(async () => {
     if (!user) return;
     await updateUserProfile(user.uid, {
       goals: { ...profile?.goals, goalType, activityLevel },
@@ -42,7 +42,11 @@ export default function GoalSetupScreen() {
 
   return (
     <ScreenContainer>
-      <AppHeader left="back" onLeftPress={() => router.back()} showProfile={false} />
+      {/* No back button: this is always the first onboarding screen (reached
+          via Redirect from app/index.tsx or router.replace() from signup),
+          so it's always the root of its stack — there's nowhere to go back
+          to, and router.back() here would silently no-op. */}
+      <AppHeader left="none" showProfile={false} />
       <LeafAccent style={styles.leaf} />
 
       <ProgressSteps steps={ONBOARDING_STEPS} currentIndex={0} variant="numbered" />
@@ -94,6 +98,8 @@ export default function GoalSetupScreen() {
         <Feather name="zap" size={16} color={theme.colors.brandDark} />
         <Text style={styles.tipText}>You can always change your goal or activity level later in your profile settings.</Text>
       </View>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       <View style={styles.footer}>
         <Button label="Continue" onPress={handleContinue} loading={loading} />
@@ -163,6 +169,11 @@ const styles = StyleSheet.create({
     ...theme.text.caption,
     color: theme.colors.textSecondary,
     flex: 1,
+  },
+  errorText: {
+    ...theme.text.caption,
+    color: theme.colors.error,
+    marginTop: theme.spacing.lg,
   },
   footer: {
     marginTop: theme.spacing.xl,

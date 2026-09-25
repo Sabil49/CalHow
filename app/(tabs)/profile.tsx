@@ -86,9 +86,7 @@ export default function ProfileScreen() {
         {SHOW_COMING_SOON_FEATURES && (
           <SettingsRow icon="shield" title="Security" subtitle="Manage 2FA and login security" onPress={() => {}} disabled />
         )}
-        {SHOW_COMING_SOON_FEATURES && (
-          <SettingsRow icon="award" title="CalHow Pro" subtitle="Manage your subscription and billing" onPress={() => router.push('/paywall')} />
-        )}
+        <SettingsRow icon="award" title="CalHow Pro" subtitle="Manage your subscription and billing" onPress={() => router.push('/paywall')} />
         <SettingsRow icon="database" title="Account & Data" subtitle="View your data, delete your account" onPress={() => router.push('/settings/account-data')} />
       </Card>
 

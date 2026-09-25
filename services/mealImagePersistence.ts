@@ -14,26 +14,21 @@ import { ApiError, uploadMealImage } from './api';
  * load on a second device.
  *
  * ---------------------------------------------------------------------
- * STORAGE APPROACH CHOSEN: backend-mediated upload to Cloudinary
+ * STORAGE APPROACH CHOSEN: backend-mediated upload to Firebase Storage
  * ---------------------------------------------------------------------
- * This project is on the Firebase Spark (free, no billing account) plan.
- * Firebase now requires upgrading to the Blaze plan (linking a billing
- * account) before Cloud Storage for Firebase can be enabled at all, even
- * for free-tier usage — so this does NOT use Firebase Storage.
- *
- * Instead: the already-existing Next.js backend (the same trust boundary
+ * The already-existing Cloud Functions backend (the same trust boundary
  * used for AI vision calls, see services/api.ts) uploads the photo to
- * Cloudinary and returns a durable HTTPS URL. The Expo app never talks to
- * Cloudinary directly and never holds a Cloudinary credential — see
- * calhow-backend/services/media/cloudinaryImageStorageProvider.ts for the
- * upload implementation and calhow-backend/app/api/meals/image/route.ts
- * for the endpoint. Ownership/scoping: the resulting path is
- * `calhow/users/{uid}/meals/{analysisId}` — `uid` comes from the caller's
- * verified Firebase ID token (never anything this app sends), and
- * `analysisId` is ownership-checked backend-side before use (same check
- * clarify/recalculate already do). So one user's upload can never collide
- * with or overwrite another user's image, or use an analysisId they don't
- * own.
+ * Firebase Storage and returns a durable HTTPS download-token URL. The
+ * Expo app never talks to Storage directly — see
+ * calhow-backend/functions/src/services/media/firebaseStorageImageProvider.ts
+ * for the upload implementation and
+ * calhow-backend/functions/src/meals/image.ts for the endpoint.
+ * Ownership/scoping: the resulting path is `meals/{uid}/{analysisId}` —
+ * `uid` comes from the caller's verified Firebase ID token (never
+ * anything this app sends), and `analysisId` is ownership-checked
+ * backend-side before use (same check clarify/recalculate already do). So
+ * one user's upload can never collide with or overwrite another user's
+ * image, or use an analysisId they don't own.
  *
  * `imageBase64`/`mimeType`/`analysisId` are all passed in directly from
  * scan session state (already captured at photo-capture/analyze time, see
@@ -57,18 +52,17 @@ import { ApiError, uploadMealImage } from './api';
  * ---------------------------------------------------------------------
  * This codebase has no per-meal delete function yet — services/firestore.ts
  * only has `deleteAllUserData` (bulk, used by account deletion). When a
- * per-meal delete is added, it MUST also delete the corresponding
- * Cloudinary asset before/after removing the Firestore doc, via a new
- * backend-only endpoint (never client-side — CLOUDINARY_API_SECRET must
- * stay server-only, same reasoning as the upload side). The asset's
- * Cloudinary `public_id` is recoverable from the stored `imageUrl` itself
- * (the path segment between `/upload/v<version>/` and the file
- * extension, e.g. `calhow/users/{uid}/meals/{analysisId}`) — see
- * calhow-backend/services/media/imageStorage.ts's `UploadImageResult.
- * providerId` doc comment. Bulk account deletion has the same gap today:
- * `deleteAllUserData` removes the Firestore meal docs but does not clean
- * up their Cloudinary assets — both should be addressed together when
- * per-meal delete is built.
+ * per-meal delete is added, it MUST also delete the corresponding Storage
+ * object before/after removing the Firestore doc, via a new backend-only
+ * endpoint (never client-side — storage.rules denies all client access by
+ * design, same reasoning as the upload side). The object path is
+ * recoverable from the stored `imageUrl` itself (the path segment between
+ * `/o/` and `?alt=media`, URL-decoded, e.g. `meals/{uid}/{analysisId}`) —
+ * see calhow-backend/functions/src/services/media/imageStorage.ts's
+ * `UploadImageResult.providerId` doc comment. Bulk account deletion has
+ * the same gap today: `deleteAllUserData` removes the Firestore meal docs
+ * but does not clean up their Storage objects — both should be addressed
+ * together when per-meal delete is built.
  */
 
 /**

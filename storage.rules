@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// CalHow Firebase Storage Security Rules
+//
+// Default-deny for everything. The mobile app never talks to Storage
+// directly — meal photos are uploaded via the backend-mediated
+// uploadMealImage Cloud Function (calhow-backend/functions/src/meals/
+// image.ts), which uses the Admin SDK and so bypasses these rules
+// entirely, same trust model as Firestore (see firestore.rules and
+// calhow-backend/functions/src/lib/firebaseAdmin.ts's doc comment).
+// Reading a stored photo happens via its own download-token URL
+// (services/media/firebaseStorageImageProvider.ts), not an authenticated
+// Storage SDK read, so no read rule is needed either.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

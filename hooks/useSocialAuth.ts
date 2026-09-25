@@ -83,6 +83,7 @@ export function useSocialAuth(): UseSocialAuthResult {
         identityToken: credential.identityToken,
         rawNonce,
         fullName: fullName || undefined,
+        email: credential.email,
       });
       return true;
     } catch (err) {

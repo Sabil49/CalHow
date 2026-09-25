@@ -107,8 +107,15 @@ export function subscribeToUserProfile(
   });
 }
 
+/**
+ * `setDoc(..., { merge: true })` rather than `updateDoc` — the latter
+ * throws "No document to update" if `users/{uid}` doesn't exist yet (e.g.
+ * signup was interrupted between creating the Auth account and calling
+ * createUserProfile). Merging is a safe superset: same behavior when the
+ * doc exists, self-healing when it doesn't.
+ */
 export async function updateUserProfile(uid: string, patch: Partial<UserProfile>) {
-  await updateDoc(userDoc(uid), { ...patch, updatedAt: serverTimestamp() });
+  await setDoc(userDoc(uid), { ...patch, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 // ---------------------------------------------------------------------------

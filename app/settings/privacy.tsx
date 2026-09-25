@@ -20,8 +20,7 @@ export default function PrivacyScreen() {
       <Card style={styles.card}>
         <Section title="1. What this covers">
           CalHow is operated by myzoapp ("the App", "we"). This Privacy Policy explains what information CalHow
-          collects when you use the app, how it's used, and the choices you have. CalHow is currently in beta
-          testing.
+          collects when you use the app, how it's used, and the choices you have.
         </Section>
 
         <Section title="2. Information we collect">
@@ -42,15 +41,13 @@ export default function PrivacyScreen() {
 
         <Section title="4. Third parties we share data with">
           CalHow relies on the following services to function. Each processes the data necessary for its role:{'\n\n'}
-          {'•'} Firebase (Google) — authentication and database storage for your profile, meals, and weight
-          logs.{'\n\n'}
-          {'•'} Cloudinary — stores meal photos you scan.{'\n\n'}
+          {'•'} Firebase (Google) — authentication, database storage for your profile/meals/weight
+          logs, and storage for meal photos you scan.{'\n\n'}
           {'•'} Anthropic — CalHow sends your meal photos to Anthropic's Claude AI to identify foods and
           estimate nutrition. Anthropic does not receive your name or account identity directly from this call.{'\n\n'}
           {'•'} USDA FoodData Central — a public nutrition database used to calculate calories and macros for
           detected foods.{'\n\n'}
-          {'•'} RevenueCat — manages subscription billing. Purchasing is currently disabled during the beta, so
-          no payment data is processed yet.
+          {'•'} RevenueCat — manages subscription billing for CalHow Pro.
         </Section>
 
         <Section title="5. Your choices">

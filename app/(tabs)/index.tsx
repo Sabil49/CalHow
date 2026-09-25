@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/navigation/AppHeader';
 import { Card } from '@/components/ui/Card';
 import { ProgressRing, ProgressRingLabel } from '@/components/ui/ProgressRing';
 import { NutritionMetric } from '@/components/nutrition/NutritionMetric';
+import { IntakeSources } from '@/components/nutrition/IntakeSources';
 import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
 import { HeroGlow } from '@/components/ui/HeroGlow';
 import { ScanFoodButton } from '@/components/meal/ScanFoodButton';
@@ -70,6 +71,7 @@ export default function HomeScreen() {
             <ProgressRingLabel value={`${percentOfGoal}%`} label="of goal" />
           </ProgressRing>
         </View>
+        <IntakeSources hasPersonalGoal={profile?.goals?.dailyCalorieTarget != null} />
       </Card>
 
       <Card style={styles.macroCard}>

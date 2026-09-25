@@ -84,11 +84,15 @@ export async function changePassword(currentPassword: string, newPassword: strin
  * sign-in — create the same users/{uid} profile doc signUpWithEmail
  * creates, so every account (email or social) has one from the start.
  */
-async function ensureSocialUserProfile(user: User, isNewUser: boolean | undefined, fallbackFullName?: string) {
+async function ensureSocialUserProfile(
+  user: User,
+  isNewUser: boolean | undefined,
+  fallback: { fullName?: string; email?: string | null } = {},
+) {
   if (!isNewUser) return;
   await createUserProfile(user.uid, {
-    email: user.email,
-    fullName: user.displayName || fallbackFullName || '',
+    email: user.email || fallback.email || null,
+    fullName: user.displayName || fallback.fullName || '',
   });
 }
 
@@ -116,10 +120,19 @@ export async function signInWithAppleCredential(params: {
   identityToken: string;
   rawNonce: string;
   fullName?: string;
+  email?: string | null;
 }): Promise<User> {
   const provider = new OAuthProvider('apple.com');
   const credential = provider.credential({ idToken: params.identityToken, rawNonce: params.rawNonce });
   const result = await signInWithCredential(auth, credential);
-  await ensureSocialUserProfile(result.user, getAdditionalUserInfo(result)?.isNewUser, params.fullName);
+  // Persist Apple's one-time name onto the Firebase user too, so it survives
+  // even if the profile doc write below is ever retried on a later sign-in.
+  if (params.fullName && !result.user.displayName) {
+    await updateProfile(result.user, { displayName: params.fullName });
+  }
+  await ensureSocialUserProfile(result.user, getAdditionalUserInfo(result)?.isNewUser, {
+    fullName: params.fullName,
+    email: params.email,
+  });
   return result.user;
 }
