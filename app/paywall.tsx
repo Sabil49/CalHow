@@ -18,7 +18,7 @@ import { theme } from '@/constants/theme';
 const HIGHLIGHTS: { icon: keyof typeof Feather.glyphMap; title: string; subtitle: string }[] = [
   { icon: 'trending-up', title: 'Smarter tracking', subtitle: 'Better results' },
   { icon: 'target', title: 'Personalized', subtitle: 'for you' },
-  { icon: 'shield', title: 'Ad-free', subtitle: 'experience' },
+  { icon: 'repeat', title: 'Unlimited', subtitle: 'AI scans' },
 ];
 
 /**
