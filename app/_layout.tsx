@@ -40,7 +40,7 @@ import { theme } from '@/constants/theme';
  * Silently does nothing if permission was never granted.
  */
 function ReminderSync() {
-  const { user } = useAuth();
+  const { user, initializing } = useAuth();
   const { profile } = useUserProfile();
   // Firestore's live listener re-fires with a new `profile` object
   // reference on every snapshot (cache, then server) even when the data
@@ -52,12 +52,19 @@ function ReminderSync() {
   const remindersKey = JSON.stringify(profile?.reminders ?? null);
 
   useEffect(() => {
-    if (!user || !profile) return;
+    // Signed out (not merely still restoring the session): clear this
+    // device's meal/weight reminders so the next person to sign in here
+    // doesn't get the previous user's.
+    if (!user) {
+      if (!initializing) void syncScheduledReminders(undefined);
+      return;
+    }
+    if (!profile) return;
     getNotificationPermissionGranted().then((granted) => {
       if (granted) void syncScheduledReminders(profile.reminders);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, remindersKey]);
+  }, [user, initializing, remindersKey]);
 
   return null;
 }

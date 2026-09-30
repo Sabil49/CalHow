@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useAuth } from './useAuth';
 import type {
   AiMealPrediction,
   ClarificationAnswer,
@@ -61,6 +62,14 @@ const ScanSessionContext = createContext<ScanSessionContextValue | null>(null);
 
 export function ScanSessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<ScanSessionState>(initialState);
+
+  // A scan in progress belongs to whoever started it — drop it when the
+  // signed-in user changes (sign-out, account switch).
+  const { user } = useAuth();
+  const uid = user?.uid;
+  useEffect(() => {
+    setState(initialState);
+  }, [uid]);
 
   const setImage = useCallback((uri: string, base64: string, mimeType: 'image/jpeg' | 'image/png') => {
     setState((s) => ({ ...s, imageUri: uri, imageBase64: base64, mimeType }));

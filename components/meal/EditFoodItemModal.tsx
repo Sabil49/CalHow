@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/Button';
 import { theme } from '@/constants/theme';
 import type { FoodItem } from '@/types/models';
 
+/** Largest single food portion accepted — well above any real serving. */
+const MAX_PORTION_GRAMS = 3000;
+
 interface EditFoodItemModalProps {
   visible: boolean;
   /** Pass an existing item to edit it, or omit to add a new one. */
@@ -44,8 +47,9 @@ export function EditFoodItemModal({ visible, item, onDismiss, onSave }: EditFood
     }
   }, [visible, item]);
 
-  const gramsValue = Number(portionGrams);
-  const gramsValid = portionGrams.trim().length > 0 && gramsValue > 0;
+  // Accepts a decimal comma ("150,5"); capped so a typo (e.g. 15000 g) can't wreck the meal's totals.
+  const gramsValue = Number(portionGrams.trim().replace(',', '.'));
+  const gramsValid = portionGrams.trim().length > 0 && gramsValue > 0 && gramsValue <= MAX_PORTION_GRAMS;
   const canSave = name.trim().length > 0 && gramsValid && Number(calories) >= 0;
 
   function handleSave() {
