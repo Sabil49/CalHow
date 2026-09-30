@@ -27,7 +27,8 @@ interface ScanSessionState {
   clarificationAnswers: ClarificationAnswer[];
   /** Editable working copy of detected foods, seeded from `prediction.foods` on Review. */
   foods: FoodItem[];
-  mealType: MealType;
+  /** Chosen on the Result screen; unset means "suggest from the time of day" (suggestMealTypeForNow). */
+  mealType?: MealType;
   /** Recalculated totals after the user edits foods on Review — becomes the saved Meal's totals. */
   finalTotals?: { calories: number; protein: number; carbs: number; fats: number; fiber?: number };
   savedMealId?: string;
@@ -54,7 +55,6 @@ const initialState: ScanSessionState = {
   clarificationQuestions: [],
   clarificationAnswers: [],
   foods: [],
-  mealType: 'snack',
 };
 
 const ScanSessionContext = createContext<ScanSessionContextValue | null>(null);

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -15,16 +15,25 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useScanSession, suggestMealTypeForNow } from '@/hooks/useScanSession';
 import { saveMeal, logCorrection } from '@/services/firestore';
 import { persistMealImage } from '@/services/mealImagePersistence';
-import { diffFoodCorrections } from '@/utils/mealCorrections';
+import { diffFoodCorrections, hasUserEdits } from '@/utils/mealCorrections';
 import { generateMealInsight } from '@/utils/mealInsights';
 import { DEFAULT_CALORIE_GOAL } from '@/utils/nutrition';
 import { theme } from '@/constants/theme';
+import type { MealType } from '@/types/models';
+
+const MEAL_TYPE_OPTIONS: { value: MealType; label: string }[] = [
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'snack', label: 'Snack' },
+];
 
 export default function ResultScreen() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const { foods, finalTotals, prediction, clarificationAnswers, mealType, imageBase64, mimeType, analysisId, quota, setSavedMealId } =
+  const { foods, finalTotals, prediction, clarificationAnswers, mealType, imageBase64, mimeType, analysisId, quota, setSavedMealId, setMealType, reset } =
     useScanSession();
+  const selectedMealType = mealType ?? suggestMealTypeForNow();
 
   const calorieGoal = profile?.goals?.dailyCalorieTarget ?? DEFAULT_CALORIE_GOAL;
 
@@ -48,13 +57,12 @@ export default function ResultScreen() {
 
   const { run: handleSave, loading, error } = useAsyncAction(async () => {
     if (!user || !prediction || !finalTotals) return;
-    const finalMealType = mealType ?? suggestMealTypeForNow();
     const persistedImageUrl =
       imageBase64 && mimeType && analysisId ? await persistMealImage(imageBase64, mimeType, analysisId) : undefined;
 
     const mealId = await saveMeal(user.uid, {
       userId: user.uid,
-      mealType: finalMealType,
+      mealType: selectedMealType,
       imageUrl: persistedImageUrl,
       calories: totals.calories,
       protein: totals.protein,
@@ -65,7 +73,7 @@ export default function ResultScreen() {
       aiPrediction: prediction,
       clarificationAnswers: clarificationAnswers.length > 0 ? clarificationAnswers : undefined,
       userCorrections:
-        JSON.stringify(foods) !== JSON.stringify(prediction.foods)
+        hasUserEdits(prediction.foods, foods)
           ? { foods, calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fats: totals.fats, fiber: totals.fiber }
           : undefined,
       confidence: prediction.confidence,
@@ -125,6 +133,23 @@ export default function ResultScreen() {
         </View>
       )}
 
+      <View style={styles.mealTypeRow} accessibilityRole="radiogroup" accessibilityLabel="Meal type">
+        {MEAL_TYPE_OPTIONS.map((option) => {
+          const active = selectedMealType === option.value;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => setMealType(option.value)}
+              style={[styles.mealTypePill, active && styles.mealTypePillActive]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[styles.mealTypePillText, active && styles.mealTypePillTextActive]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       <View style={styles.totalsCardWrap}>
         <MealTotalsCard
           calories={totals.calories}
@@ -170,7 +195,7 @@ export default function ResultScreen() {
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <View style={styles.buttonRow}>
-        <Button label="Scan Another" variant="outline" icon="camera" onPress={() => router.replace('/scan/camera')} style={{ flex: 1 }} />
+        <Button label="Scan Another" variant="outline" icon="camera" onPress={() => { reset(); router.replace('/scan/camera'); }} style={{ flex: 1 }} />
         <Button label="Save Meal" variant="solid" icon="check-circle" onPress={handleSave} loading={loading} style={{ flex: 1 }} />
       </View>
     </ScreenContainer>
@@ -207,6 +232,32 @@ const styles = StyleSheet.create({
   quotaText: {
     ...theme.text.caption,
     color: theme.colors.textSecondary,
+  },
+  mealTypeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.md,
+  },
+  mealTypePill: {
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  mealTypePillActive: {
+    backgroundColor: theme.colors.brandPrimary,
+    borderColor: theme.colors.brandPrimary,
+  },
+  mealTypePillText: {
+    ...theme.text.caption,
+    color: theme.colors.textSecondary,
+  },
+  mealTypePillTextActive: {
+    color: theme.colors.textInverse,
+    fontFamily: theme.fontFamily.sansSemiBold,
   },
   totalsCardWrap: {
     marginTop: theme.spacing.lg,
