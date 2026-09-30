@@ -24,7 +24,10 @@ export const DEFAULT_CALORIE_GOAL = 2000;
 
 export function calculateAge(dateOfBirthIso: string | undefined): number | undefined {
   if (!dateOfBirthIso) return undefined;
-  const dob = new Date(dateOfBirthIso);
+  // "YYYY-MM-DD" as a LOCAL date: new Date("YYYY-MM-DD") is UTC midnight,
+  // i.e. the previous day west of UTC — ages were off by one around birthdays.
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirthIso);
+  const dob = match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(dateOfBirthIso);
   if (Number.isNaN(dob.getTime())) return undefined;
   const now = new Date();
   let age = now.getFullYear() - dob.getFullYear();

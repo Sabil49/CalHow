@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface UseAsyncActionResult<Args extends unknown[]> {
   run: (...args: Args) => Promise<void>;
@@ -18,9 +18,15 @@ export function useAsyncAction<Args extends unknown[]>(
 ): UseAsyncActionResult<Args> {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Synchronous in-flight guard: `loading` only disables the button after a
+  // re-render, so two quick taps could otherwise run the action twice (e.g.
+  // save the same meal twice).
+  const inFlight = useRef(false);
 
   const run = useCallback(
     async (...args: Args) => {
+      if (inFlight.current) return;
+      inFlight.current = true;
       setLoading(true);
       setError(null);
       try {
@@ -28,6 +34,7 @@ export function useAsyncAction<Args extends unknown[]>(
       } catch (err) {
         setError(toMessage(err));
       } finally {
+        inFlight.current = false;
         setLoading(false);
       }
     },

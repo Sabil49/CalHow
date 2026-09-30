@@ -151,7 +151,9 @@ export function computeLoggingHabits(meals: Meal[], period: ProgressPeriod, fibe
   const loggedDateKeys = new Set<string>();
   const fiberByDate = new Map<string, number>();
   for (const meal of periodMeals) {
-    const key = meal.loggedAt.toISOString().slice(0, 10);
+    // Local calendar day (toISOString() is the UTC date — evening meals west of UTC landed on the next day).
+    const d = meal.loggedAt;
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     loggedDateKeys.add(key);
     fiberByDate.set(key, (fiberByDate.get(key) ?? 0) + (meal.fiber ?? 0));
   }
