@@ -195,6 +195,8 @@ export interface Meal {
   confidence?: number;
   /** AI Meal Insights (CalHow Pro), cached by the backend on the meal document. */
   aiInsights?: { items: MealInsight[]; generatedAt?: Date };
+  /** Set on a "log again" copy (relogMeal): the id of the original meal. Smart Meal Memory skips these so one correction isn't counted once per re-log. */
+  relogOf?: string;
   isSaved: boolean;
   loggedAt: Date;
   createdAt: Date;

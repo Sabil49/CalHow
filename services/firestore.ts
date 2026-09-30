@@ -147,6 +147,7 @@ function mapMeal(snap: QueryDocumentSnapshot<DocumentData>): Meal {
     aiInsights: Array.isArray(data.aiInsights?.items)
       ? { items: data.aiInsights.items, generatedAt: toDate(data.aiInsights.generatedAt) }
       : undefined,
+    relogOf: data.relogOf,
     isSaved: data.isSaved ?? true,
     loggedAt: toDate(data.loggedAt) ?? new Date(),
     createdAt: toDate(data.createdAt) ?? new Date(),
@@ -193,6 +194,7 @@ export async function relogMeal(uid: string, meal: Meal, mealType: Meal['mealTyp
     clarificationAnswers: meal.clarificationAnswers,
     userCorrections: meal.userCorrections,
     confidence: meal.confidence,
+    relogOf: meal.relogOf ?? meal.id,
     isSaved: true,
     loggedAt: new Date(),
   });
