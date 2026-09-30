@@ -6,9 +6,19 @@ import { getCitation, type CitationId } from '@/constants/citations';
 import { theme } from '@/constants/theme';
 
 interface IntakeSourcesProps {
-  /** Whether the goal shown comes from the user's personal target (Mifflin-St Jeor) or the 2,000 kcal FDA reference default. */
-  hasPersonalGoal: boolean;
+  /**
+   * Where the goal shown comes from: the FDA 2,000 kcal reference default,
+   * CalHow's personal estimate (Mifflin-St Jeor), or targets a Pro user
+   * entered themselves (only the ranges and food data still apply).
+   */
+  goalSource: 'default' | 'personal' | 'custom';
 }
+
+const IDS_BY_SOURCE: Record<IntakeSourcesProps['goalSource'], CitationId[]> = {
+  default: ['defaultGoal', 'macros', 'foodData'],
+  personal: ['bmr', 'activity', 'macros', 'foodData'],
+  custom: ['macros', 'foodData'],
+};
 
 /**
  * Inline, tappable citations for the calorie goal and macro percentages on
@@ -17,8 +27,8 @@ interface IntakeSourcesProps {
  * straight to the external source from the card itself, plus a link to the
  * full Sources & Citations screen.
  */
-export function IntakeSources({ hasPersonalGoal }: IntakeSourcesProps) {
-  const ids: CitationId[] = hasPersonalGoal ? ['bmr', 'activity', 'macros', 'foodData'] : ['defaultGoal', 'macros', 'foodData'];
+export function IntakeSources({ goalSource }: IntakeSourcesProps) {
+  const ids = IDS_BY_SOURCE[goalSource];
 
   return (
     <View style={styles.container}>

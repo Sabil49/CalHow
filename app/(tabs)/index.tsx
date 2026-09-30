@@ -71,7 +71,9 @@ export default function HomeScreen() {
             <ProgressRingLabel value={`${percentOfGoal}%`} label="of goal" />
           </ProgressRing>
         </View>
-        <IntakeSources hasPersonalGoal={profile?.goals?.dailyCalorieTarget != null} />
+        <IntakeSources
+          goalSource={profile?.goals?.customTargets ? 'custom' : profile?.goals?.dailyCalorieTarget != null ? 'personal' : 'default'}
+        />
       </Card>
 
       <Card style={styles.macroCard}>

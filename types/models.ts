@@ -31,6 +31,12 @@ export interface UserGoals {
   targetWeightKg?: number;
   weeklyPaceKg?: number;
   dailyCalorieTarget?: number;
+  /**
+   * True when a Pro user set `dailyCalorieTarget`/`macroTargets` by hand
+   * (Settings → Goals → Custom Goals & Macros) instead of taking the
+   * estimate. Absent/false means both are the estimate from utils/nutrition.ts.
+   */
+  customTargets?: boolean;
   macroTargets?: {
     proteinG: number;
     carbsG: number;

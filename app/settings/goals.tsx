@@ -6,19 +6,37 @@ import { AppHeader } from '@/components/navigation/AppHeader';
 import { SelectableCard } from '@/components/ui/SelectableCard';
 import { Button } from '@/components/ui/Button';
 import { TargetsSection } from '@/components/goals/TargetsSection';
+import { CustomTargetsCard, type CustomTargetsValues } from '@/components/goals/CustomTargetsCard';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { updateUserProfile } from '@/services/firestore';
 import { ACTIVITY_OPTIONS, GOAL_OPTIONS } from '@/constants/goalOptions';
 import {
   calculateAge,
+  checkCustomTargets,
   estimateDailyCalorieTarget,
   estimateGoalDate,
   estimateMacroTargets,
 } from '@/utils/nutrition';
 import { theme } from '@/constants/theme';
-import type { ActivityLevel, GoalType } from '@/types/models';
+import type { ActivityLevel, GoalType, UserGoals } from '@/types/models';
+
+/** Blank means "not entered" (NaN, which checkCustomTargets rejects) — plain Number('') would silently be 0. */
+function parseTarget(text: string): number {
+  return text.trim() === '' ? NaN : Number(text);
+}
+
+function toCustomValues(calories: number, macros: NonNullable<UserGoals['macroTargets']>): CustomTargetsValues {
+  return {
+    calories: String(calories),
+    proteinG: String(macros.proteinG),
+    carbsG: String(macros.carbsG),
+    fatsG: String(macros.fatsG),
+    fiberG: macros.fiberG != null ? String(macros.fiberG) : '',
+  };
+}
 
 /**
  * Reuses the exact same calculation helpers as onboarding's Target Setup
@@ -54,6 +72,38 @@ export default function GoalsScreen() {
     [profile, currentWeightKg, goalType, activityLevel, weeklyPaceKg],
   );
 
+  // Custom Goals & Macros (CalHow Pro) — see components/goals/CustomTargetsCard.tsx.
+  const isPro = useFeatureGate('customGoalsAndMacros');
+  const savedGoals = profile?.goals;
+  const [customEnabled, setCustomEnabled] = useState(savedGoals?.customTargets ?? false);
+  const [customValues, setCustomValues] = useState<CustomTargetsValues>(() =>
+    savedGoals?.customTargets && savedGoals.dailyCalorieTarget && savedGoals.macroTargets
+      ? toCustomValues(savedGoals.dailyCalorieTarget, savedGoals.macroTargets)
+      : toCustomValues(dailyCalorieTarget, estimateMacroTargets(dailyCalorieTarget)),
+  );
+  const customCheck = useMemo(
+    () =>
+      checkCustomTargets({
+        calories: parseTarget(customValues.calories),
+        proteinG: parseTarget(customValues.proteinG),
+        carbsG: parseTarget(customValues.carbsG),
+        fatsG: parseTarget(customValues.fatsG),
+      }),
+    [customValues],
+  );
+  const useCustom = isPro && customEnabled;
+
+  function resetCustomValues() {
+    setCustomValues(toCustomValues(dailyCalorieTarget, estimateMacroTargets(dailyCalorieTarget)));
+  }
+
+  function handleCustomEnabledChange(enabled: boolean) {
+    // Turning custom targets on for the first time starts from the current
+    // recommendation rather than whatever was prefilled when the screen mounted.
+    if (enabled && !savedGoals?.customTargets) resetCustomValues();
+    setCustomEnabled(enabled);
+  }
+
   const goalDate = useMemo(
     () => (isPaceRelevant ? estimateGoalDate(currentWeightKg, targetWeightNumber, weeklyPaceKg) : undefined),
     [isPaceRelevant, currentWeightKg, targetWeightNumber, weeklyPaceKg],
@@ -61,14 +111,27 @@ export default function GoalsScreen() {
 
   const { run: handleSave, loading, error } = useAsyncAction(async () => {
     if (!user) return;
+    if (useCustom && customCheck.errors.length > 0) {
+      throw new Error(customCheck.errors[0]);
+    }
+    // A user who isn't (or is no longer) Pro saves the recommended targets,
+    // which also turns custom targets off.
     await updateUserProfile(user.uid, {
       goals: {
         goalType,
         activityLevel,
         targetWeightKg: isPaceRelevant ? targetWeightNumber : currentWeightKg,
         weeklyPaceKg: isPaceRelevant ? weeklyPaceKg : undefined,
-        dailyCalorieTarget,
-        macroTargets: estimateMacroTargets(dailyCalorieTarget),
+        customTargets: useCustom,
+        dailyCalorieTarget: useCustom ? Math.round(Number(customValues.calories)) : dailyCalorieTarget,
+        macroTargets: useCustom
+          ? {
+              proteinG: Math.round(Number(customValues.proteinG)),
+              carbsG: Math.round(Number(customValues.carbsG)),
+              fatsG: Math.round(Number(customValues.fatsG)),
+              fiberG: customValues.fiberG.trim() ? Math.round(Number(customValues.fiberG)) : undefined,
+            }
+          : estimateMacroTargets(dailyCalorieTarget),
       },
     });
     router.back();
@@ -124,6 +187,16 @@ export default function GoalsScreen() {
         dailyCalorieTarget={dailyCalorieTarget}
         goalDate={goalDate}
         preferredUnit={profile?.preferredUnit ?? 'metric'}
+      />
+
+      <CustomTargetsCard
+        isPro={isPro}
+        enabled={customEnabled}
+        onEnabledChange={handleCustomEnabledChange}
+        values={customValues}
+        onValuesChange={setCustomValues}
+        check={customCheck}
+        onReset={resetCustomValues}
       />
 
       {error && <Text style={styles.errorText}>{error}</Text>}

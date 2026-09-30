@@ -78,14 +78,92 @@ export function estimateDailyCalorieTarget({
   return Math.round(target / 10) * 10;
 }
 
-/** Suggested macro split (grams) for a given calorie target — simple 30/40/30 protein/carb/fat baseline. */
+/**
+ * Suggested macro split (grams) for a given calorie target — 25/50/25
+ * protein/carb/fat, chosen to sit inside every Acceptable Macronutrient
+ * Distribution Range (MACRO_RANGES below) with room for rounding, as the
+ * Sources & Citations screen states. (It used to be 30/40/30, whose 40%
+ * carbs fell below the 45% AMDR floor that screen cites.)
+ */
 export function estimateMacroTargets(calorieTarget: number) {
   return {
-    proteinG: Math.round((calorieTarget * 0.3) / 4),
-    carbsG: Math.round((calorieTarget * 0.4) / 4),
-    fatsG: Math.round((calorieTarget * 0.3) / 9),
+    proteinG: Math.round((calorieTarget * 0.25) / 4),
+    carbsG: Math.round((calorieTarget * 0.5) / 4),
+    fatsG: Math.round((calorieTarget * 0.25) / 9),
     fiberG: 25,
   };
+}
+
+/** Lowest daily calorie target CalHow accepts — same floor as estimateDailyCalorieTarget (see Sources & Citations, "Minimum calorie floor"). */
+export const MIN_CALORIE_TARGET = 1200;
+export const MAX_CALORIE_TARGET = 6000;
+
+/** Acceptable Macronutrient Distribution Ranges for adults, as % of calories (National Academies DRI — see constants/citations.ts, "macros"). */
+export const MACRO_RANGES = {
+  protein: { min: 10, max: 35 },
+  carbs: { min: 45, max: 65 },
+  fats: { min: 20, max: 35 },
+} as const;
+
+export interface CustomTargetsInput {
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatsG: number;
+}
+
+export interface CustomTargetsCheck {
+  /** Calories implied by the macro grams (4/4/9 kcal per gram). */
+  macroCalories: number;
+  /** Each macro's share of `macroCalories`, rounded to whole %. 0 when no macros entered. */
+  percent: { protein: number; carbs: number; fats: number };
+  /** Blocking problems — saving is not allowed while any exist. */
+  errors: string[];
+  /** Non-blocking advice (outside the AMDR, macros don't add up to the calorie target). */
+  warnings: string[];
+}
+
+/**
+ * Validates a Pro user's hand-entered calorie and macro targets. Anything
+ * outside the calorie floor/ceiling is blocked; a macro split outside the
+ * AMDR, or macros that don't roughly add up to the calorie target, is only
+ * flagged — people on keto, high-protein etc. diets legitimately go outside
+ * those ranges, and it's their call.
+ */
+export function checkCustomTargets({ calories, proteinG, carbsG, fatsG }: CustomTargetsInput): CustomTargetsCheck {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const valid = (n: number) => Number.isFinite(n) && n >= 0;
+  if (!valid(calories) || !valid(proteinG) || !valid(carbsG) || !valid(fatsG)) {
+    errors.push('Please enter a number for every target.');
+  }
+  if (calories < MIN_CALORIE_TARGET) {
+    errors.push(`Daily calories can't be below ${MIN_CALORIE_TARGET.toLocaleString()} kcal — below that, a diet is unlikely to meet basic nutrient needs without medical supervision.`);
+  } else if (calories > MAX_CALORIE_TARGET) {
+    errors.push(`Daily calories can't be above ${MAX_CALORIE_TARGET.toLocaleString()} kcal.`);
+  }
+
+  const macroCalories = Math.round(proteinG * 4 + carbsG * 4 + fatsG * 9);
+  const pct = (kcal: number) => (macroCalories > 0 ? Math.round((kcal / macroCalories) * 100) : 0);
+  const percent = { protein: pct(proteinG * 4), carbs: pct(carbsG * 4), fats: pct(fatsG * 9) };
+
+  if (errors.length === 0 && macroCalories > 0) {
+    if (Math.abs(macroCalories - calories) > calories * 0.1) {
+      warnings.push(`Your macros add up to ${macroCalories.toLocaleString()} kcal, which is more than 10% away from your ${calories.toLocaleString()} kcal target.`);
+    }
+    const outside = (Object.keys(MACRO_RANGES) as (keyof typeof MACRO_RANGES)[]).filter(
+      (key) => percent[key] < MACRO_RANGES[key].min || percent[key] > MACRO_RANGES[key].max,
+    );
+    if (outside.length > 0) {
+      const names = { protein: 'Protein', carbs: 'Carbs', fats: 'Fat' };
+      warnings.push(
+        `${outside.map((key) => `${names[key]} (${percent[key]}%)`).join(', ')} ${outside.length === 1 ? 'is' : 'are'} outside the generally recommended range for adults. That can be fine for specific diets — check with a doctor or dietitian if unsure.`,
+      );
+    }
+  }
+
+  return { macroCalories, percent, errors, warnings };
 }
 
 /** Projected date to reach `targetWeightKg` at `weeklyPaceKg` per week from `currentWeightKg`. */

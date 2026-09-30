@@ -38,7 +38,7 @@ const PRO_FEATURES: { icon: keyof typeof Feather.glyphMap; title: string; descri
   { icon: 'bar-chart-2', title: 'Advanced Progress Analytics', description: 'Explore detailed charts, trends and correlations to understand your journey better.', live: false },
   { icon: 'crop', title: 'Restaurant & Menu Scanner', description: 'Scan restaurant menus or meals and get calorie and macro estimates instantly.', live: false },
   { icon: 'star', title: 'What Should I Eat Next?', description: 'Get smart food recommendations based on your remaining calories and goals.', live: false },
-  { icon: 'sliders', title: 'Custom Goals & Macros', description: 'Set personalized calorie, macro and nutrient goals that fit your lifestyle.', live: false },
+  { icon: 'sliders', title: 'Custom Goals & Macros', description: 'Set personalized calorie, macro and nutrient goals that fit your lifestyle.', live: true },
 ];
 
 export default function PaywallScreen() {
