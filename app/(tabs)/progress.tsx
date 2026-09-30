@@ -11,6 +11,11 @@ import { LineChartMini } from '@/components/charts/LineChartMini';
 import { DonutChart } from '@/components/charts/DonutChart';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useMealHistory } from '@/hooks/useMealHistory';
+import { useWeightLogs } from '@/hooks/useWeightLogs';
+import { useFeatureGate } from '@/hooks/useFeatureGate';
+import { AdvancedAnalyticsSection } from '@/components/progress/AdvancedAnalyticsSection';
+import { computeAdvancedAnalytics } from '@/utils/advancedAnalytics';
+import { DEFAULT_CALORIE_GOAL } from '@/utils/nutrition';
 import {
   bucketCaloriesForChart,
   computeLoggingHabits,
@@ -49,6 +54,14 @@ export default function ProgressScreen() {
   const chartBuckets = useMemo(() => bucketCaloriesForChart(meals, period), [meals, period]);
   const macroBalance = useMemo(() => computeMacroBalance(meals, period), [meals, period]);
   const habits = useMemo(() => computeLoggingHabits(meals, period), [meals, period]);
+
+  const isPro = useFeatureGate('advancedProgressAnalytics');
+  const { logs: weightLogs } = useWeightLogs(366);
+  const calorieGoal = profile?.goals?.dailyCalorieTarget ?? DEFAULT_CALORIE_GOAL;
+  const advanced = useMemo(
+    () => computeAdvancedAnalytics(meals, weightLogs, period, calorieGoal),
+    [meals, weightLogs, period, calorieGoal],
+  );
 
   const avgKcalPerDay = overview.calories.value;
   const wowChange = useMemo(() => {
@@ -176,6 +189,13 @@ export default function ProgressScreen() {
         </View>
         <Text style={styles.habitsNote}>More habit tracking (water, sleep, activity) is coming in a future update.</Text>
       </Card>
+
+      <AdvancedAnalyticsSection
+        isPro={isPro}
+        analytics={advanced}
+        calorieGoal={calorieGoal}
+        preferredUnit={profile?.preferredUnit ?? 'metric'}
+      />
 
       {profile && profile.streakDays > 0 && (
         <Card style={styles.streakCard}>

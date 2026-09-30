@@ -164,6 +164,32 @@ export async function saveMeal(
   return ref.id;
 }
 
+/**
+ * Logs a copy of a previously saved meal as eaten now ("What Should I Eat
+ * Next?" one-tap re-log). Same foods and totals, and the original AI
+ * prediction/corrections carried over unchanged, so the copy is exactly as
+ * trustworthy as the meal it came from.
+ */
+export async function relogMeal(uid: string, meal: Meal, mealType: Meal['mealType']) {
+  return saveMeal(uid, {
+    userId: uid,
+    mealType,
+    imageUrl: meal.imageUrl,
+    calories: meal.calories,
+    protein: meal.protein,
+    carbs: meal.carbs,
+    fats: meal.fats,
+    fiber: meal.fiber,
+    foods: meal.foods,
+    aiPrediction: meal.aiPrediction,
+    clarificationAnswers: meal.clarificationAnswers,
+    userCorrections: meal.userCorrections,
+    confidence: meal.confidence,
+    isSaved: true,
+    loggedAt: new Date(),
+  });
+}
+
 export async function getMeal(uid: string, mealId: string): Promise<Meal | null> {
   const snap = await getDoc(mealDoc(uid, mealId));
   if (!snap.exists()) return null;

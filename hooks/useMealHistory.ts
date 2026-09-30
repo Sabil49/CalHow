@@ -10,7 +10,8 @@ interface UseMealHistoryResult {
 }
 
 /** Fetches the signed-in user's most recent logged meals (default 200, newest first). */
-export function useMealHistory(count = 200): UseMealHistoryResult {
+/** `enabled: false` skips the read entirely (returns no meals) — for screens that only need history for a Pro feature. */
+export function useMealHistory(count = 200, enabled = true): UseMealHistoryResult {
   const { user } = useAuth();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +19,7 @@ export function useMealHistory(count = 200): UseMealHistoryResult {
 
   useEffect(() => {
     let cancelled = false;
-    if (!user) {
+    if (!user || !enabled) {
       setMeals([]);
       setLoading(false);
       return;
@@ -33,7 +34,7 @@ export function useMealHistory(count = 200): UseMealHistoryResult {
     return () => {
       cancelled = true;
     };
-  }, [user, count, refreshKey]);
+  }, [user, count, enabled, refreshKey]);
 
   return { meals, loading, refresh: () => setRefreshKey((k) => k + 1) };
 }

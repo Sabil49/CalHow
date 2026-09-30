@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -12,13 +12,42 @@ import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
 import { HeroGlow } from '@/components/ui/HeroGlow';
 import { ScanFoodButton } from '@/components/meal/ScanFoodButton';
 import { MealListItem } from '@/components/meal/MealListItem';
+import { EatNextCard } from '@/components/meal/EatNextCard';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useTodayMeals } from '@/hooks/useTodayMeals';
+import { useMealHistory } from '@/hooks/useMealHistory';
+import { useFeatureGate } from '@/hooks/useFeatureGate';
+import { suggestMealTypeForNow } from '@/hooks/useScanSession';
+import { relogMeal } from '@/services/firestore';
+import { suggestNextMeals } from '@/utils/eatNext';
 import { DEFAULT_CALORIE_GOAL, getGreeting } from '@/utils/nutrition';
 import { theme } from '@/constants/theme';
+import type { Meal } from '@/types/models';
+
 export default function HomeScreen() {
+  const { user } = useAuth();
   const { profile } = useUserProfile();
   const { meals, totals, loading } = useTodayMeals();
+
+  // "What Should I Eat Next?" (CalHow Pro) — only Pro users need the history.
+  const isPro = useFeatureGate('eatNextSuggestions');
+  const { meals: history } = useMealHistory(200, isPro);
+  const eatNext = useMemo(
+    () =>
+      suggestNextMeals({
+        history,
+        today: totals,
+        calorieGoal: profile?.goals?.dailyCalorieTarget ?? DEFAULT_CALORIE_GOAL,
+        proteinGoal: profile?.goals?.macroTargets?.proteinG,
+      }),
+    [history, totals, profile],
+  );
+
+  async function handleRelog(meal: Meal) {
+    if (!user) return;
+    await relogMeal(user.uid, meal, suggestMealTypeForNow());
+  }
 
   const firstName = profile?.fullName?.split(' ')[0] || 'there';
   const calorieGoal = profile?.goals?.dailyCalorieTarget ?? DEFAULT_CALORIE_GOAL;
@@ -96,6 +125,8 @@ export default function HomeScreen() {
           helperText={macroPercent(totals.protein, macroGoals?.proteinG) != null ? `${macroPercent(totals.protein, macroGoals?.proteinG)}%` : undefined}
         />
       </Card>
+
+      <EatNextCard isPro={isPro} result={eatNext} onRelog={handleRelog} />
 
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.sectionHeading}>Today's meals</Text>
