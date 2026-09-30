@@ -9,7 +9,9 @@ import { FoodHeroImage } from '@/components/ui/FoodHeroImage';
 import { NutritionMetric } from '@/components/nutrition/NutritionMetric';
 import { DetectedFoodRow } from '@/components/meal/DetectedFoodRow';
 import { MealTotalsCard } from '@/components/meal/MealTotalsCard';
+import { MealInsightsCard } from '@/components/meal/MealInsightsCard';
 import { useAuth } from '@/hooks/useAuth';
+import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { getMeal } from '@/services/firestore';
 import { DEFAULT_CALORIE_GOAL } from '@/utils/nutrition';
@@ -42,6 +44,7 @@ export default function MealDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, initializing: authInitializing } = useAuth();
   const { profile } = useUserProfile();
+  const isPro = useFeatureGate('aiMealInsights');
 
   const [meal, setMeal] = useState<Meal | null>(null);
   const [state, setState] = useState<LoadState>('loading');
@@ -189,6 +192,8 @@ export default function MealDetailScreen() {
           {meal.fiber != null && <NutritionMetric kind="fiber" value={`${Math.round(meal.fiber)} g`} label="Fiber" />}
         </View>
       </Card>
+
+      <MealInsightsCard mealId={meal.id} isPro={isPro} initialInsights={meal.aiInsights?.items} />
 
       {meal.userCorrections && (
         <View style={styles.correctionNote}>

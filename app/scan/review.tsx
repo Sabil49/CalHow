@@ -45,7 +45,8 @@ export default function ReviewScreen() {
     if (modalMode === 'add') {
       setFoods([...foods, item]);
     } else {
-      setFoods(foods.map((f) => (f.id === item.id ? item : f)));
+      // A hand-edited portion is the user's own, not Smart Meal Memory's.
+      setFoods(foods.map((f) => (f.id === item.id ? { ...item, memoryAdjusted: undefined } : f)));
     }
     setModalMode(null);
     setEditingItem(undefined);

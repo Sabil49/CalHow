@@ -5,6 +5,10 @@ import type {
   ApiErrorBody,
   ClarifyMealRequest,
   ClarifyMealResponse,
+  MealInsightsRequest,
+  MealInsightsResponse,
+  ScanMenuRequest,
+  ScanMenuResponse,
   RecalculateMealRequest,
   RecalculateMealResponse,
   UploadMealImageRequest,
@@ -80,6 +84,17 @@ export function clarifyMeal(payload: ClarifyMealRequest) {
 /** POST /recalculateMeal — recompute totals after the user edits detected foods. */
 export function recalculateMeal(payload: RecalculateMealRequest) {
   return authedFetch<RecalculateMealResponse>('/recalculateMeal', payload);
+}
+
+/** POST /mealInsights — CalHow Pro AI Meal Insights for one saved meal (cached server-side). */
+export function getMealInsights(mealId: string) {
+  const payload: MealInsightsRequest = { mealId, tzOffsetMinutes: new Date().getTimezoneOffset() };
+  return authedFetch<MealInsightsResponse>('/mealInsights', payload);
+}
+
+/** POST /scanMenu — CalHow Pro Restaurant & Menu Scanner. */
+export function scanMenu(payload: ScanMenuRequest) {
+  return authedFetch<ScanMenuResponse>('/scanMenu', payload);
 }
 
 /** POST /uploadMealImage — upload a captured meal photo to durable remote storage, get back its URL. */

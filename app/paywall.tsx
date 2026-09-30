@@ -33,11 +33,11 @@ const HIGHLIGHTS: { icon: keyof typeof Feather.glyphMap; title: string; subtitle
  */
 const PRO_FEATURES: { icon: keyof typeof Feather.glyphMap; title: string; description: string; live: boolean }[] = [
   { icon: 'repeat', title: 'Unlimited AI Food Scans', description: 'Scan as many meals as you want, anytime, without daily limits.', live: true },
-  { icon: 'cpu', title: 'Smart Meal Memory', description: 'CalHow remembers your corrections, portions and foods to give better results over time.', live: false },
-  { icon: 'zap', title: 'AI Meal Insights', description: 'Get deeper AI analysis and personalized nutrition insights for every meal.', live: false },
-  { icon: 'bar-chart-2', title: 'Advanced Progress Analytics', description: 'Explore detailed charts, trends and correlations to understand your journey better.', live: false },
-  { icon: 'crop', title: 'Restaurant & Menu Scanner', description: 'Scan restaurant menus or meals and get calorie and macro estimates instantly.', live: false },
-  { icon: 'star', title: 'What Should I Eat Next?', description: 'Get smart food recommendations based on your remaining calories and goals.', live: false },
+  { icon: 'cpu', title: 'Smart Meal Memory', description: 'CalHow learns how you adjust portion sizes and applies it to your future scans.', live: true },
+  { icon: 'zap', title: 'AI Meal Insights', description: 'Get personalized notes on each meal, based on your goals and the rest of your day.', live: true },
+  { icon: 'bar-chart-2', title: 'Advanced Progress Analytics', description: 'See goal consistency, weekday vs weekend eating, calories by meal, top foods and weight trend.', live: true },
+  { icon: 'crop', title: 'Restaurant & Menu Scanner', description: 'Scan a restaurant menu to see estimated calories and macros for each dish.', live: true },
+  { icon: 'star', title: 'What Should I Eat Next?', description: 'Get suggestions from your own past meals that fit your remaining calories and protein.', live: true },
   { icon: 'sliders', title: 'Custom Goals & Macros', description: 'Set personalized calorie, macro and nutrient goals that fit your lifestyle.', live: true },
 ];
 

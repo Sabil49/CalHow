@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
@@ -82,6 +82,13 @@ export default function HomeScreen() {
           <ScanFoodButton onPress={() => router.push('/scan/camera')} />
         </View>
       </View>
+
+      <Pressable style={styles.menuLink} onPress={() => router.push('/scan/menu')} accessibilityRole="button">
+        <Feather name="book-open" size={14} color={theme.colors.brandDark} />
+        <Text style={styles.menuLinkText}>Eating out? Scan a restaurant menu</Text>
+        {!isPro && <Text style={styles.proTag}>PRO</Text>}
+        <Feather name="chevron-right" size={14} color={theme.colors.brandDark} />
+      </Pressable>
 
       <Card style={styles.intakeCard}>
         <View style={styles.intakeRow}>
@@ -195,12 +202,35 @@ const styles = StyleSheet.create({
     bottom: -30,
     left: -theme.spacing.sm,
   },
-  intakeCard: {
+  menuLink: {
     // The floating ScanFoodButton (130px, positioned bottom:-30 relative
     // to heroWrap) extends 30px below the hero photo's bottom edge —
     // this margin must clear that plus real breathing room, or the
-    // button's shadow visually collides with this card's top edge.
+    // button's shadow visually collides with this row.
     marginTop: theme.spacing['4xl'],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    alignSelf: 'flex-end',
+  },
+  menuLinkText: {
+    ...theme.text.caption,
+    fontFamily: theme.fontFamily.sansSemiBold,
+    color: theme.colors.brandDark,
+  },
+  proTag: {
+    ...theme.text.caption,
+    fontSize: 9,
+    fontFamily: theme.fontFamily.sansSemiBold,
+    color: theme.colors.brandDark,
+    backgroundColor: theme.colors.brandTint,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    overflow: 'hidden',
+  },
+  intakeCard: {
+    marginTop: theme.spacing.md,
   },
   intakeRow: {
     flexDirection: 'row',

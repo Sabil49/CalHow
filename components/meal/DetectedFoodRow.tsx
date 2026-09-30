@@ -35,6 +35,12 @@ export function DetectedFoodRow({ food, editable = false, onEdit, onDelete }: De
           <Text style={styles.dot}>•</Text>
           <Text style={styles.kcal}>{food.calories} kcal</Text>
         </View>
+        {food.memoryAdjusted && (
+          <View style={styles.memoryRow}>
+            <Feather name="cpu" size={10} color={theme.colors.brandDark} />
+            <Text style={styles.memoryText}>Portion adjusted from your past edits</Text>
+          </View>
+        )}
       </View>
 
       {food.confidence != null && (
@@ -96,6 +102,16 @@ const styles = StyleSheet.create({
     ...theme.text.caption,
     color: theme.colors.textSecondary,
     flexShrink: 0,
+  },
+  memoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  memoryText: {
+    ...theme.text.caption,
+    fontSize: 10,
+    color: theme.colors.brandDark,
   },
   confidenceCol: {
     alignItems: 'flex-end',

@@ -44,7 +44,9 @@ export default function PrivacyScreen() {
           {'•'} Firebase (Google) — authentication, database storage for your profile/meals/weight
           logs, and storage for meal photos you scan.{'\n\n'}
           {'•'} Anthropic — CalHow sends your meal photos to Anthropic's Claude AI to identify foods and
-          estimate nutrition. Anthropic does not receive your name or account identity directly from this call.{'\n\n'}
+          estimate nutrition. With CalHow Pro, the Menu Scanner sends the menu photo you take, and AI Meal
+          Insights sends that meal's foods and nutrition, the day's totals, your goal and targets, and your diet type,
+          allergies and disliked ingredients. Anthropic does not receive your name or account identity.{'\n\n'}
           {'•'} USDA FoodData Central — a public nutrition database used to calculate calories and macros for
           detected foods.{'\n\n'}
           {'•'} RevenueCat — manages subscription billing for CalHow Pro.

@@ -139,6 +139,9 @@ function mapMeal(snap: QueryDocumentSnapshot<DocumentData>): Meal {
     clarificationAnswers: data.clarificationAnswers,
     userCorrections: data.userCorrections,
     confidence: data.confidence,
+    aiInsights: Array.isArray(data.aiInsights?.items)
+      ? { items: data.aiInsights.items, generatedAt: toDate(data.aiInsights.generatedAt) }
+      : undefined,
     isSaved: data.isSaved ?? true,
     loggedAt: toDate(data.loggedAt) ?? new Date(),
     createdAt: toDate(data.createdAt) ?? new Date(),

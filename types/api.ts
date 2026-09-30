@@ -10,7 +10,39 @@ import type {
   ClarificationAnswer,
   ClarificationQuestion,
   FoodItem,
+  MealInsight,
 } from './models';
+
+/** POST /mealInsights — CalHow Pro. */
+export interface MealInsightsRequest {
+  mealId: string;
+  /** `new Date().getTimezoneOffset()` — lets the backend find the other meals on the same local day. */
+  tzOffsetMinutes: number;
+}
+
+export interface MealInsightsResponse {
+  insights: MealInsight[];
+  generatedAt: string;
+}
+
+/** POST /scanMenu — CalHow Pro. */
+export type ScanMenuRequest = AnalyzeMealRequest;
+
+export interface ScanMenuDish {
+  name: string;
+  description?: string;
+  /** Present when nutrition was estimated — pass to the normal review flow to log the dish. */
+  analysisId?: string;
+  prediction?: AiMealPrediction;
+  needsClarification?: boolean;
+  clarificationQuestions?: ClarificationQuestion[];
+  /** Present when the dish couldn't be estimated. */
+  unavailableReason?: string;
+}
+
+export interface ScanMenuResponse {
+  dishes: ScanMenuDish[];
+}
 
 export interface ApiErrorBody {
   error: {

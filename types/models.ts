@@ -118,6 +118,18 @@ export interface FoodItem {
   calories: number;
   confidence?: number; // 0-1
   imageUrl?: string;
+  /** Set by the backend when Smart Meal Memory (CalHow Pro) adjusted this portion from the user's past corrections. */
+  memoryAdjusted?: boolean;
+  /** With memoryAdjusted: the AI's estimate before memory scaled it (kept in the saved AI prediction for future learning). */
+  aiPortionGrams?: number;
+}
+
+export type MealInsightKind = 'positive' | 'suggestion' | 'watch';
+
+export interface MealInsight {
+  kind: MealInsightKind;
+  title: string;
+  body: string;
 }
 
 export type OilAmount = 'none' | 'light' | 'regular' | 'heavy';
@@ -179,6 +191,8 @@ export interface Meal {
   /** Diff applied by the user on top of the AI prediction, if any. */
   userCorrections?: UserMealCorrections;
   confidence?: number;
+  /** AI Meal Insights (CalHow Pro), cached by the backend on the meal document. */
+  aiInsights?: { items: MealInsight[]; generatedAt?: Date };
   isSaved: boolean;
   loggedAt: Date;
   createdAt: Date;
