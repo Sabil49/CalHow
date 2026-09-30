@@ -71,8 +71,10 @@ export function ScanSessionProvider({ children }: { children: React.ReactNode })
     setState(initialState);
   }, [uid]);
 
+  // A new photo always starts a new scan — nothing (clarification answers,
+  // meal type, totals) carries over from an earlier, possibly abandoned one.
   const setImage = useCallback((uri: string, base64: string, mimeType: 'image/jpeg' | 'image/png') => {
-    setState((s) => ({ ...s, imageUri: uri, imageBase64: base64, mimeType }));
+    setState({ ...initialState, imageUri: uri, imageBase64: base64, mimeType });
   }, []);
 
   const setAnalysis = useCallback<ScanSessionContextValue['setAnalysis']>((params) => {

@@ -195,7 +195,16 @@ export default function ResultScreen() {
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <View style={styles.buttonRow}>
-        <Button label="Scan Another" variant="outline" icon="camera" onPress={() => { reset(); router.replace('/scan/camera'); }} style={{ flex: 1 }} />
+        <Button
+          label="Scan Another"
+          variant="outline"
+          icon="camera"
+          onPress={() => {
+            reset();
+            router.replace('/scan/camera');
+          }}
+          style={{ flex: 1 }}
+        />
         <Button label="Save Meal" variant="solid" icon="check-circle" onPress={handleSave} loading={loading} style={{ flex: 1 }} />
       </View>
     </ScreenContainer>
