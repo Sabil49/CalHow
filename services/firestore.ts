@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getCountFromServer,
   getDoc,
   getDocs,
   limit,
@@ -220,6 +221,34 @@ export async function getMealsForDate(uid: string, date: Date): Promise<Meal[]> 
   );
   const snap = await getDocs(q);
   return snap.docs.map(mapMeal);
+}
+
+/** Live version of getRecentMeals — `onError` fires instead of `callback` if the listener fails (e.g. permission denied). */
+export function subscribeToRecentMeals(
+  uid: string,
+  callback: (meals: Meal[]) => void,
+  count = 30,
+  onError?: (err: Error) => void,
+): Unsubscribe {
+  const q = query(mealsCol(uid), orderBy('loggedAt', 'desc'), limit(count));
+  return onSnapshot(q, (snap) => callback(snap.docs.map(mapMeal)), onError);
+}
+
+/** Total number of meals the user has logged (a server-side count — doesn't download them). */
+export async function countMeals(uid: string): Promise<number> {
+  const snap = await getCountFromServer(mealsCol(uid));
+  return snap.data().count;
+}
+
+/** Live: every meal logged at or after `since`, newest first. */
+export function subscribeToMealsSince(
+  uid: string,
+  since: Date,
+  callback: (meals: Meal[]) => void,
+  onError?: (err: Error) => void,
+): Unsubscribe {
+  const q = query(mealsCol(uid), where('loggedAt', '>=', Timestamp.fromDate(since)), orderBy('loggedAt', 'desc'));
+  return onSnapshot(q, (snap) => callback(snap.docs.map(mapMeal)), onError);
 }
 
 export async function getRecentMeals(uid: string, count = 30): Promise<Meal[]> {

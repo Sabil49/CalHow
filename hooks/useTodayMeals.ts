@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from './useAuth';
+import { useLocalDay } from './useLocalDay';
 import { subscribeToMealsForDate } from '@/services/firestore';
 import type { Meal } from '@/types/models';
 
@@ -17,9 +18,14 @@ interface UseTodayMealsResult {
   loading: boolean;
 }
 
-/** Live-subscribes to the signed-in user's meals logged today and sums up totals. */
+/**
+ * Live-subscribes to the signed-in user's meals logged today and sums up
+ * totals. Re-subscribes when the local day changes (see useLocalDay), so
+ * Home doesn't keep showing yesterday's meals after midnight.
+ */
 export function useTodayMeals(): UseTodayMealsResult {
   const { user } = useAuth();
+  const day = useLocalDay();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +41,7 @@ export function useTodayMeals(): UseTodayMealsResult {
       setLoading(false);
     });
     return unsubscribe;
-  }, [user]);
+  }, [user, day]);
 
   const totals = useMemo<NutritionTotals>(
     () =>

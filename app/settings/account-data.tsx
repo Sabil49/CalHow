@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -9,15 +9,26 @@ import { Button } from '@/components/ui/Button';
 import { DeleteAccountModal } from '@/components/settings/DeleteAccountModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useMealHistory } from '@/hooks/useMealHistory';
 import { useWeightLogs } from '@/hooks/useWeightLogs';
 import { deleteAccount, getReauthMethod } from '@/services/account';
+import { countMeals } from '@/services/firestore';
 import { theme } from '@/constants/theme';
 
 export default function AccountDataScreen() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const { meals, loading: mealsLoading } = useMealHistory();
+  // A server-side count: listing meals to count them capped the number at the list size.
+  const [mealCount, setMealCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    countMeals(user.uid)
+      .then((count) => !cancelled && setMealCount(count))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
   const { logs, loading: logsLoading } = useWeightLogs();
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -40,7 +51,7 @@ export default function AccountDataScreen() {
         <View style={styles.dataRow}>
           <Feather name="camera" size={16} color={theme.colors.brandDark} />
           <Text style={styles.dataLabel}>Meals logged</Text>
-          <Text style={styles.dataValue}>{mealsLoading ? '—' : meals.length}</Text>
+          <Text style={styles.dataValue}>{mealCount ?? '—'}</Text>
         </View>
         <View style={styles.dataRow}>
           <Feather name="bar-chart-2" size={16} color={theme.colors.brandDark} />

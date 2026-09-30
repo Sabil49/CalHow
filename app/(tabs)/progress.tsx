@@ -10,7 +10,7 @@ import { ProgressRing } from '@/components/ui/ProgressRing';
 import { LineChartMini } from '@/components/charts/LineChartMini';
 import { DonutChart } from '@/components/charts/DonutChart';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useMealHistory } from '@/hooks/useMealHistory';
+import { useMealsSince } from '@/hooks/useMealHistory';
 import { useWeightLogs } from '@/hooks/useWeightLogs';
 import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { AdvancedAnalyticsSection } from '@/components/progress/AdvancedAnalyticsSection';
@@ -35,8 +35,10 @@ const PERIODS: { label: string; value: ProgressPeriod }[] = [
 
 export default function ProgressScreen() {
   const { profile } = useUserProfile();
-  const { meals } = useMealHistory();
   const [period, setPeriod] = useState<ProgressPeriod>('week');
+  // The whole selected period (+1 day for the partial first day), and never
+  // less than two weeks: the week-over-week comparison needs last week too.
+  const { meals } = useMealsSince(Math.max(periodToDays(period), 14) + 1);
 
   const goals = profile?.goals?.macroTargets;
   const overview = useMemo(
