@@ -311,7 +311,12 @@ export async function addWeightLog(
     loggedAt: Timestamp.fromDate(params.loggedAt),
     createdAt: serverTimestamp(),
   });
-  await updateUserProfile(uid, { currentWeightKg: params.weightKg });
+  // Only the most recent weigh-in is the user's current weight (it drives
+  // calorie targets) — backfilling an older entry mustn't overwrite it.
+  const latest = await getDocs(query(weightLogsCol(uid), orderBy('loggedAt', 'desc'), limit(1)));
+  if (latest.empty || latest.docs[0]!.id === ref.id) {
+    await updateUserProfile(uid, { currentWeightKg: params.weightKg });
+  }
   return ref.id;
 }
 

@@ -14,8 +14,25 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useWeightLogs } from '@/hooks/useWeightLogs';
 import { addWeightLog } from '@/services/firestore';
-import { lbToKg } from '@/utils/units';
+import { kgToLb, lbToKg } from '@/utils/units';
 import { theme } from '@/constants/theme';
+
+/** Plausible adult body weight range — rejects typos like "7" or "700" before they skew calorie targets. */
+const MIN_WEIGHT_KG = 20;
+const MAX_WEIGHT_KG = 400;
+
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+function toUnit(kg: number, unit: 'kg' | 'lb'): number {
+  return round1(unit === 'kg' ? kg : kgToLb(kg));
+}
+
+/** Accepts a decimal comma too ("70,5") — some keyboards' decimal-pad types one. */
+function parseWeight(text: string): number {
+  return Number(text.trim().replace(',', '.')) || 0;
+}
 
 export default function AddWeightScreen() {
   return (
@@ -34,16 +51,33 @@ function AddWeightScreenContent() {
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [unit, setUnit] = useState<'kg' | 'lb'>(profile?.preferredUnit === 'imperial' ? 'lb' : 'kg');
-  const [weightText, setWeightText] = useState(String(latestWeight));
+  // Prefilled in the unit shown next to it (latestWeight is in kg).
+  const [weightText, setWeightText] = useState(() => String(toUnit(latestWeight, unit)));
   const [note, setNote] = useState('');
   const [noteExpanded, setNoteExpanded] = useState(false);
 
-  const weightValue = Number(weightText) || 0;
+  const weightValue = parseWeight(weightText);
   const weightKg = unit === 'kg' ? weightValue : lbToKg(weightValue);
+
+  /** Switching kg/lb converts the entered number, so "70 kg" doesn't silently become "70 lb". */
+  function changeUnit(next: 'kg' | 'lb') {
+    if (next === unit) return;
+    if (weightValue > 0) {
+      setWeightText(String(round1(next === 'lb' ? kgToLb(weightValue) : lbToKg(weightValue))));
+    }
+    setUnit(next);
+  }
 
   const { run: handleSave, loading, error } = useAsyncAction(async () => {
     if (!user || weightValue <= 0) return;
-    await addWeightLog(user.uid, { weightKg, note: note.trim() || undefined, loggedAt: date });
+    if (weightKg < MIN_WEIGHT_KG || weightKg > MAX_WEIGHT_KG) {
+      throw new Error(
+        `Please enter a weight between ${toUnit(MIN_WEIGHT_KG, unit)} and ${toUnit(MAX_WEIGHT_KG, unit)} ${unit}.`,
+      );
+    }
+    // Never log a weigh-in in the future (it would read as the latest weight).
+    const loggedAt = date.getTime() > Date.now() ? new Date() : date;
+    await addWeightLog(user.uid, { weightKg, note: note.trim() || undefined, loggedAt });
     router.back();
   });
 
@@ -62,13 +96,13 @@ function AddWeightScreenContent() {
   );
 
   const rulerTicks = useMemo(() => {
-    const center = weightValue || latestWeight;
+    const center = weightValue || toUnit(latestWeight, unit);
     const ticks: number[] = [];
     for (let i = -5; i <= 5; i++) {
       ticks.push(Math.round((center + i * 0.25) * 100) / 100);
     }
     return ticks;
-  }, [weightValue, latestWeight]);
+  }, [weightValue, latestWeight, unit]);
 
   return (
     <ScreenContainer>
@@ -97,10 +131,10 @@ function AddWeightScreenContent() {
         <View style={styles.weightHeaderRow}>
           <Text style={styles.weightSectionLabel}>Your weight</Text>
           <View style={styles.unitToggle}>
-            <Pressable onPress={() => setUnit('kg')} style={[styles.unitOption, unit === 'kg' && styles.unitOptionActive]}>
+            <Pressable onPress={() => changeUnit('kg')} style={[styles.unitOption, unit === 'kg' && styles.unitOptionActive]}>
               <Text style={[styles.unitText, unit === 'kg' && styles.unitTextActive]}>kg</Text>
             </Pressable>
-            <Pressable onPress={() => setUnit('lb')} style={[styles.unitOption, unit === 'lb' && styles.unitOptionActive]}>
+            <Pressable onPress={() => changeUnit('lb')} style={[styles.unitOption, unit === 'lb' && styles.unitOptionActive]}>
               <Text style={[styles.unitText, unit === 'lb' && styles.unitTextActive]}>lb</Text>
             </Pressable>
           </View>
@@ -154,15 +188,15 @@ function AddWeightScreenContent() {
           </Pressable>
         </View>
         <View style={styles.statsRow}>
-          <StatCol icon="trending-up" value={`${weightKg.toFixed(1)} kg`} label="Current weight" />
+          <StatCol icon="trending-up" value={`${toUnit(weightKg, unit).toFixed(1)} ${unit}`} label="Current weight" />
           {deltaVsLast != null && (
             <StatCol
               icon={deltaVsLast <= 0 ? 'arrow-down' : 'arrow-up'}
-              value={`${deltaVsLast >= 0 ? '+' : ''}${deltaVsLast.toFixed(1)} kg`}
+              value={`${deltaVsLast >= 0 ? '+' : ''}${toUnit(deltaVsLast, unit).toFixed(1)} ${unit}`}
               label="vs last entry"
             />
           )}
-          <StatCol icon="flag" value={`${startingWeight.toFixed(1)} kg`} label="Starting weight" />
+          <StatCol icon="flag" value={`${toUnit(startingWeight, unit).toFixed(1)} ${unit}`} label="Starting weight" />
         </View>
       </Card>
 
@@ -190,7 +224,13 @@ function AddWeightScreenContent() {
           <Modal transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
             <Pressable style={styles.pickerBackdrop} onPress={() => setShowDatePicker(false)}>
               <Pressable style={styles.pickerSheet} onPress={(e) => e.stopPropagation()}>
-                <DateTimePicker value={date} mode="datetime" display="spinner" onChange={(_, selected) => selected && setDate(selected)} />
+                <DateTimePicker
+                  value={date}
+                  mode="datetime"
+                  display="spinner"
+                  maximumDate={new Date()}
+                  onChange={(_, selected) => selected && setDate(selected)}
+                />
                 <Button label="Done" icon={null} onPress={() => setShowDatePicker(false)} />
               </Pressable>
             </Pressable>
@@ -200,6 +240,7 @@ function AddWeightScreenContent() {
             value={date}
             mode="date"
             display="default"
+            maximumDate={new Date()}
             onChange={(_, selected) => {
               setShowDatePicker(false);
               if (selected) setDate(selected);
