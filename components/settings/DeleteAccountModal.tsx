@@ -5,23 +5,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { theme } from '@/constants/theme';
+import type { ReauthMethod } from '@/services/account';
 
 interface DeleteAccountModalProps {
   visible: boolean;
   onDismiss: () => void;
+  /** How the user reconfirms their identity — only 'password' shows a password field (see services/account.ts). */
+  reauthMethod: ReauthMethod | null;
   /** Calls services/account.ts's deleteAccount — this component only handles the confirmation UI. */
   onConfirm: (password: string) => Promise<void>;
 }
 
 const CONFIRM_PHRASE = 'DELETE';
 
-export function DeleteAccountModal({ visible, onDismiss, onConfirm }: DeleteAccountModalProps) {
+const SOCIAL_LABEL: Record<Exclude<ReauthMethod, 'password'>, string> = { google: 'Google', apple: 'Apple' };
+
+export function DeleteAccountModal({ visible, onDismiss, reauthMethod, onConfirm }: DeleteAccountModalProps) {
   const [password, setPassword] = useState('');
   const [confirmText, setConfirmText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canConfirm = password.length > 0 && confirmText.trim().toUpperCase() === CONFIRM_PHRASE;
+  const needsPassword = reauthMethod === 'password';
+  const canConfirm = reauthMethod != null && (!needsPassword || password.length > 0) && confirmText.trim().toUpperCase() === CONFIRM_PHRASE;
 
   function reset() {
     setPassword('');
@@ -77,7 +83,11 @@ export function DeleteAccountModal({ visible, onDismiss, onConfirm }: DeleteAcco
             </Text>
 
             <View style={styles.form}>
-              <Input label="Confirm your password" icon="lock" placeholder="Current password" value={password} onChangeText={setPassword} isPassword />
+              {needsPassword ? (
+                <Input label="Confirm your password" icon="lock" placeholder="Current password" value={password} onChangeText={setPassword} isPassword />
+              ) : reauthMethod ? (
+                <Text style={styles.body}>To confirm it's you, you'll be asked to sign in with {SOCIAL_LABEL[reauthMethod]} again.</Text>
+              ) : null}
               <Input
                 label={`Type ${CONFIRM_PHRASE} to confirm`}
                 icon="edit-3"

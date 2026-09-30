@@ -7,13 +7,15 @@ import { AppHeader } from '@/components/navigation/AppHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DeleteAccountModal } from '@/components/settings/DeleteAccountModal';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useMealHistory } from '@/hooks/useMealHistory';
 import { useWeightLogs } from '@/hooks/useWeightLogs';
-import { deleteAccount } from '@/services/account';
+import { deleteAccount, getReauthMethod } from '@/services/account';
 import { theme } from '@/constants/theme';
 
 export default function AccountDataScreen() {
+  const { user } = useAuth();
   const { profile } = useUserProfile();
   const { meals, loading: mealsLoading } = useMealHistory();
   const { logs, loading: logsLoading } = useWeightLogs();
@@ -62,8 +64,8 @@ export default function AccountDataScreen() {
           <Text style={styles.dangerTitle}>Danger zone</Text>
         </View>
         <Text style={styles.dangerBody}>
-          Deleting your account permanently removes your CalHow profile, meals, and weight history, and revokes your
-          login. This cannot be undone.
+          Deleting your account permanently removes your CalHow profile, meals, meal photos and weight history, and
+          revokes your login. This cannot be undone.
         </Text>
         <Button label="Delete Account" variant="danger-ghost" icon="trash-2" onPress={() => setModalVisible(true)} style={styles.deleteButton} />
       </Card>
@@ -71,12 +73,17 @@ export default function AccountDataScreen() {
       <View style={styles.footnote}>
         <Feather name="info" size={12} color={theme.colors.textMuted} />
         <Text style={styles.footnoteText}>
-          This deletes what CalHow's app stores for you today. If backend logs, uploaded photos, or billing records
-          exist in the future, those systems will need their own deletion process.
+          An active CalHow Pro subscription is billed by the App Store or Google Play, not CalHow — deleting your account
+          doesn't cancel it. Cancel it in your store's subscription settings first.
         </Text>
       </View>
 
-      <DeleteAccountModal visible={modalVisible} onDismiss={() => setModalVisible(false)} onConfirm={handleDeleteAccount} />
+      <DeleteAccountModal
+        visible={modalVisible}
+        onDismiss={() => setModalVisible(false)}
+        reauthMethod={getReauthMethod(user)}
+        onConfirm={handleDeleteAccount}
+      />
     </ScreenContainer>
   );
 }
