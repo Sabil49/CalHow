@@ -8,8 +8,9 @@ import { Card } from '@/components/ui/Card';
 import { WeekStrip } from '@/components/meal/WeekStrip';
 import { MealListItem } from '@/components/meal/MealListItem';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useMealHistory } from '@/hooks/useMealHistory';
+import { useMealHistory, useMealsForDay } from '@/hooks/useMealHistory';
 import { groupMealsByDay, calcWeeklyAverage } from '@/utils/mealHistory';
+import { localDayKey } from '@/utils/advancedAnalytics';
 import { theme } from '@/constants/theme';
 import type { Meal, MealType } from '@/types/models';
 
@@ -28,11 +29,8 @@ const TIME_ICON: Record<MealType, keyof typeof Feather.glyphMap> = {
   snack: 'moon',
 };
 
-function dateKeyOf(date: Date): string {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
-}
+/** Local calendar day — same keys as utils/mealHistory.ts and WeekStrip. */
+const dateKeyOf = localDayKey;
 
 function labelForDate(date: Date): string {
   return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date);
@@ -40,9 +38,13 @@ function labelForDate(date: Date): string {
 
 export default function HistoryScreen() {
   const { profile } = useUserProfile();
-  const { meals, loading } = useMealHistory();
+  const { meals: recentMeals, loading: recentLoading } = useMealHistory();
   const [viewDate, setViewDate] = useState(new Date());
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  // A picked day is loaded on its own: it can be older than the recent-meals window.
+  const { meals: dayMeals, loading: dayLoading } = useMealsForDay(dateFilter);
+  const meals = dateFilter ? dayMeals : recentMeals;
+  const loading = dateFilter ? dayLoading : recentLoading;
   const [mealTypeFilter, setMealTypeFilter] = useState<MealType | 'all'>('all');
 
   const filteredMeals = useMemo(
@@ -50,7 +52,7 @@ export default function HistoryScreen() {
     [meals, mealTypeFilter],
   );
 
-  const markedDateKeys = useMemo(() => new Set(meals.map((m) => dateKeyOf(m.loggedAt))), [meals]);
+  const markedDateKeys = useMemo(() => new Set(recentMeals.map((m) => dateKeyOf(m.loggedAt))), [recentMeals]);
 
   const groups = useMemo(() => {
     const all = groupMealsByDay(filteredMeals);
@@ -60,7 +62,7 @@ export default function HistoryScreen() {
     return match ? [match] : [{ label: labelForDate(dateFilter), dateKey: key, meals: [] as Meal[] }];
   }, [filteredMeals, dateFilter]);
 
-  const weeklyAverage = useMemo(() => calcWeeklyAverage(meals), [meals]);
+  const weeklyAverage = useMemo(() => calcWeeklyAverage(recentMeals), [recentMeals]);
 
   const goalCalories = profile?.goals?.dailyCalorieTarget;
 

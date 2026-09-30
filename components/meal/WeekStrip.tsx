@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
+import { localDayKey } from '@/utils/advancedAnalytics';
 
 interface WeekStripProps {
   selectedDate: Date;
@@ -19,11 +20,8 @@ function startOfWeek(date: Date): Date {
   return d;
 }
 
-function dateKey(date: Date): string {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
-}
+/** Local calendar day — must match the keys History passes in markedDateKeys (utils/mealHistory.ts). */
+const dateKey = localDayKey;
 
 function isSameDay(a: Date, b: Date): boolean {
   return dateKey(a) === dateKey(b);

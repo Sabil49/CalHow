@@ -89,17 +89,34 @@ export default function PersonalDetailsScreen() {
       throw new Error(`You must be at least ${MINIMUM_AGE} years old to use CalHow.`);
     }
 
-    const weightValue = Number(weightText);
+    // Accept a decimal comma ("70,5") — some keyboards type one. Height and
+    // weight feed the calorie target, so implausible values are rejected
+    // rather than saved.
+    const num = (text: string) => Number(text.trim().replace(',', '.')) || undefined;
+    const height = num(heightCm);
+    if (height != null && (height < 100 || height > 250)) {
+      throw new Error('Please enter a height between 100 and 250 cm.');
+    }
+    const weightValue = num(weightText) ?? 0;
     const currentWeightKg = weightValue > 0 ? (preferredUnit === 'imperial' ? lbToKg(weightValue) : weightValue) : undefined;
+    if (currentWeightKg != null && (currentWeightKg < 20 || currentWeightKg > 400)) {
+      throw new Error(
+        preferredUnit === 'imperial' ? 'Please enter a weight between 44 and 882 lb.' : 'Please enter a weight between 20 and 400 kg.',
+      );
+    }
+    const bodyFat = num(bodyFatPercent);
+    if (bodyFat != null && (bodyFat < 2 || bodyFat > 70)) {
+      throw new Error('Please enter a body fat percentage between 2 and 70.');
+    }
 
     await updateUserProfile(user.uid, {
       gender,
       dateOfBirth,
-      heightCm: Number(heightCm) || undefined,
+      heightCm: height,
       currentWeightKg,
       preferredUnit,
-      bodyFatPercent: bodyFatPercent ? Number(bodyFatPercent) : undefined,
-      waistCircumferenceCm: waistCircumferenceCm ? Number(waistCircumferenceCm) : undefined,
+      bodyFatPercent: bodyFat,
+      waistCircumferenceCm: num(waistCircumferenceCm),
     });
     router.push('/onboarding/target-setup');
   });

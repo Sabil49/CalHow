@@ -56,14 +56,27 @@ export default function PersonalInformationScreen() {
       }
     }
 
-    const weightValue = Number(weightText);
+    if (!fullName.trim()) {
+      throw new Error('Please enter your name.');
+    }
+    const height = Number(heightCm.trim().replace(',', '.')) || undefined;
+    if (height != null && (height < 100 || height > 250)) {
+      throw new Error('Please enter a height between 100 and 250 cm.');
+    }
+    // Accept a decimal comma ("70,5") — some keyboards type one.
+    const weightValue = Number(weightText.trim().replace(',', '.')) || 0;
     const currentWeightKg = weightValue > 0 ? (preferredUnit === 'imperial' ? lbToKg(weightValue) : weightValue) : undefined;
+    if (currentWeightKg != null && (currentWeightKg < 20 || currentWeightKg > 400)) {
+      throw new Error(
+        preferredUnit === 'imperial' ? 'Please enter a weight between 44 and 882 lb.' : 'Please enter a weight between 20 and 400 kg.',
+      );
+    }
 
     await updateUserProfile(user.uid, {
       fullName: fullName.trim(),
       gender,
       dateOfBirth,
-      heightCm: Number(heightCm) || undefined,
+      heightCm: height,
       currentWeightKg,
     });
     router.back();

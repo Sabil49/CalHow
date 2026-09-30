@@ -28,7 +28,8 @@ export default function MealSavedScreen() {
         setLoading(false);
         return;
       }
-      const result = await getMeal(user.uid, savedMealId);
+      // A failed read shows the "couldn't find" state instead of spinning forever.
+      const result = await getMeal(user.uid, savedMealId).catch(() => null);
       if (!cancelled) {
         setMeal(result);
         setLoading(false);

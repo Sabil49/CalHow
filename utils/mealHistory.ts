@@ -1,4 +1,5 @@
 import type { Meal } from '@/types/models';
+import { localDayKey } from './advancedAnalytics';
 
 export interface MealDayGroup {
   label: string;
@@ -6,11 +7,13 @@ export interface MealDayGroup {
   meals: Meal[];
 }
 
-function dateKeyOf(date: Date): string {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
-}
+/**
+ * Local calendar day. (This used to be local midnight formatted with
+ * toISOString(), i.e. the UTC date — a day early east of UTC — and the
+ * label was then parsed back from that key as UTC midnight, which is the
+ * previous day west of UTC. Older History days showed the wrong date.)
+ */
+const dateKeyOf = localDayKey;
 
 export function groupMealsByDay(meals: Meal[]): MealDayGroup[] {
   const todayKey = dateKeyOf(new Date());
@@ -29,12 +32,13 @@ export function groupMealsByDay(meals: Meal[]): MealDayGroup[] {
 
   return sortedKeys.map((key) => {
     let label: string;
+    const dayMeals = map.get(key)!.sort((a, b) => b.loggedAt.getTime() - a.loggedAt.getTime());
     if (key === todayKey) label = 'Today';
     else if (key === yesterdayKey) label = 'Yesterday';
     else {
-      label = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(key));
+      // From the meals' own local time — never by re-parsing the key string.
+      label = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(dayMeals[0]!.loggedAt);
     }
-    const dayMeals = map.get(key)!.sort((a, b) => b.loggedAt.getTime() - a.loggedAt.getTime());
     return { label, dateKey: key, meals: dayMeals };
   });
 }
