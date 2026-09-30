@@ -177,6 +177,22 @@ export function isProFromCustomerInfo(info: CustomerInfo | null): boolean {
  * with an unconfigured SDK isn't meaningful and, on some platforms/shims,
  * isn't safe to call at all.
  */
+/**
+ * When the user is in a CalHow Pro free trial that will convert to a paid
+ * subscription, the moment the trial ends (= the first charge). Null when
+ * they're not in a trial, or have already cancelled it (`willRenew`
+ * false) — nothing will be charged, so there's nothing to remind them
+ * about. Drives the "Remind me before my trial ends" notification only.
+ */
+export function getTrialEndDate(info: CustomerInfo | null): Date | null {
+  const entitlement = info?.entitlements.active[CALHOW_PRO_ENTITLEMENT_ID];
+  if (!entitlement || entitlement.periodType !== 'TRIAL' || !entitlement.willRenew || !entitlement.expirationDate) {
+    return null;
+  }
+  const end = new Date(entitlement.expirationDate);
+  return Number.isNaN(end.getTime()) ? null : end;
+}
+
 export function addCustomerInfoListener(listener: (info: CustomerInfo) => void): () => void {
   if (!configured) return () => {};
   Purchases.addCustomerInfoUpdateListener(listener);

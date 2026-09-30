@@ -57,33 +57,58 @@ function parseTime(time: string): { hour: number; minute: number } {
 }
 
 /**
- * Replaces ALL of CalHow's scheduled reminder notifications with ones
- * matching `reminders`. This app only ever schedules reminder
- * notifications, so cancelling everything first (rather than diffing
- * individual ids) is simple and safe.
- *
- * No-ops (schedules nothing, but still clears old ones) if permission
- * isn't currently granted — callers that want reminders to actually fire
- * should request permission first (see the Reminders screen).
+ * Fixed identifier for the one-off "trial ends tomorrow" notification, so
+ * it's managed separately from the repeating meal/weight reminders (see
+ * syncTrialEndReminder below).
  */
+const TRIAL_REMINDER_ID = 'calhow-trial-ending';
+/** How long before the trial ends (= the first charge) the reminder fires. */
+export const TRIAL_REMINDER_LEAD_MS = 24 * 60 * 60 * 1000;
+
 let syncChain: Promise<void> = Promise.resolve();
 
 /**
- * Serializes calls against `doSyncScheduledReminders` — without this, two
+ * Serializes every schedule/cancel call in this module — without this, two
  * overlapping calls (e.g. the Reminders screen's Save firing at the same
  * moment app-start's ReminderSync effect re-runs because a Firestore
  * listener delivered a new object reference for the same data) could both
  * cancel-then-reschedule concurrently and leave duplicate notifications
  * behind. Queuing them means each call's cancel is guaranteed to see the
- * previous call's schedule already settled.
+ * previous call's schedule already settled. A failed call doesn't break
+ * the queue for the ones after it.
+ */
+function enqueue(task: () => Promise<void>): Promise<void> {
+  const run = syncChain.catch(() => {}).then(task);
+  syncChain = run;
+  return run;
+}
+
+/**
+ * Replaces all of CalHow's scheduled meal/weight reminders with ones
+ * matching `reminders`. Cancels every scheduled notification except the
+ * trial-ending one (which has its own lifecycle, driven by the
+ * subscription rather than by these preferences), so it's simple and
+ * safe without diffing individual ids.
+ *
+ * No-ops (schedules nothing, but still clears old ones) if permission
+ * isn't currently granted — callers that want reminders to actually fire
+ * should request permission first (see the Reminders screen).
  */
 export function syncScheduledReminders(reminders: ReminderPreferences | undefined): Promise<void> {
-  syncChain = syncChain.then(() => doSyncScheduledReminders(reminders));
-  return syncChain;
+  return enqueue(() => doSyncScheduledReminders(reminders));
+}
+
+async function cancelRecurringReminders(): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .filter((request) => request.identifier !== TRIAL_REMINDER_ID)
+      .map((request) => Notifications.cancelScheduledNotificationAsync(request.identifier)),
+  );
 }
 
 async function doSyncScheduledReminders(reminders: ReminderPreferences | undefined): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await cancelRecurringReminders();
   if (!reminders) return;
   if (!(await getNotificationPermissionGranted())) return;
 
@@ -129,4 +154,54 @@ async function doSyncScheduledReminders(reminders: ReminderPreferences | undefin
       },
     });
   }
+}
+
+/** The trial reminder is on unless the user turned it off — `undefined` (never set) counts as on. */
+export function isTrialReminderEnabled(reminders: ReminderPreferences | undefined): boolean {
+  return reminders?.trialEndReminderEnabled ?? true;
+}
+
+/**
+ * Schedules (or clears) the one-off "your free trial ends tomorrow"
+ * notification, TRIAL_REMINDER_LEAD_MS before `trialEndsAt` — the moment
+ * the store charges for the first period. Pass `trialEndsAt: null` (not in
+ * a trial, or already cancelled — see getTrialEndDate in
+ * services/purchases.ts) or `enabled: false` to just clear it.
+ *
+ * Like the other reminders this never prompts for permission itself and
+ * silently schedules nothing without it. If the trial ends sooner than the
+ * lead time, there's no "day before" left and nothing is scheduled.
+ */
+export function syncTrialEndReminder({ enabled, trialEndsAt }: { enabled: boolean; trialEndsAt: Date | null }): Promise<void> {
+  return enqueue(async () => {
+    await Notifications.cancelScheduledNotificationAsync(TRIAL_REMINDER_ID);
+    if (!enabled || !trialEndsAt) return;
+
+    const fireAt = trialEndsAt.getTime() - TRIAL_REMINDER_LEAD_MS;
+    if (fireAt <= Date.now()) return;
+    if (!(await getNotificationPermissionGranted())) return;
+
+    await ensureAndroidChannel();
+    const endsLabel = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(trialEndsAt);
+    const store = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: TRIAL_REMINDER_ID,
+      content: {
+        title: 'Your CalHow Pro trial ends tomorrow',
+        body: `Your free trial ends ${endsLabel}, when your subscription starts. To avoid being charged, cancel before then in your ${store} subscriptions.`,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: fireAt,
+        channelId: ANDROID_CHANNEL_ID,
+      },
+    });
+  });
 }

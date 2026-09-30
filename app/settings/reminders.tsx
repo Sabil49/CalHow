@@ -11,11 +11,14 @@ import { Button } from '@/components/ui/Button';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { usePurchases } from '@/hooks/usePurchases';
 import { updateUserProfile } from '@/services/firestore';
 import {
   getNotificationPermissionGranted,
+  isTrialReminderEnabled,
   requestNotificationPermission,
   syncScheduledReminders,
+  syncTrialEndReminder,
 } from '@/services/notifications';
 import { theme } from '@/constants/theme';
 
@@ -43,6 +46,9 @@ function timeStringToDate(time?: string): Date {
 function dateToTimeString(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
+function formatTrialEnd(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+}
 function formatTimeString(time?: string): string {
   if (!time) return 'Set time';
   return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(timeStringToDate(time));
@@ -56,6 +62,7 @@ function formatTimeString(time?: string): string {
 export default function RemindersScreen() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
+  const { trialEndsAt } = usePurchases();
   const reminders = profile?.reminders;
 
   const [mealRemindersEnabled, setMealRemindersEnabled] = useState(reminders?.mealRemindersEnabled ?? false);
@@ -68,6 +75,8 @@ export default function RemindersScreen() {
     (String(reminders?.weightReminderDay ?? 1) as `${number}`),
   );
   const [weightReminderTime, setWeightReminderTime] = useState(reminders?.weightReminderTime ?? '08:00');
+
+  const [trialReminderEnabled, setTrialReminderEnabled] = useState(isTrialReminderEnabled(reminders));
 
   const [activePicker, setActivePicker] = useState<null | 'breakfast' | 'lunch' | 'dinner' | 'weight'>(null);
 
@@ -87,9 +96,11 @@ export default function RemindersScreen() {
       weightReminderEnabled,
       weightReminderDay: weightReminderEnabled ? Number(weightReminderDay) : undefined,
       weightReminderTime: weightReminderEnabled ? weightReminderTime : undefined,
+      trialEndReminderEnabled: trialReminderEnabled,
     };
 
-    if (mealRemindersEnabled || weightReminderEnabled) {
+    // The trial reminder only needs permission while there's a trial to remind about.
+    if (mealRemindersEnabled || weightReminderEnabled || (trialReminderEnabled && trialEndsAt)) {
       const granted = await requestNotificationPermission();
       setPermissionDenied(!granted);
       if (!granted) {
@@ -103,6 +114,7 @@ export default function RemindersScreen() {
 
     await updateUserProfile(user.uid, { reminders: nextReminders });
     await syncScheduledReminders(nextReminders);
+    await syncTrialEndReminder({ enabled: trialReminderEnabled, trialEndsAt });
     router.back();
   });
 
@@ -130,7 +142,7 @@ export default function RemindersScreen() {
       <AppHeader left="back" onLeftPress={() => router.back()} showProfile avatarUrl={profile?.photoUrl} />
 
       <Text style={styles.heading}>Reminders</Text>
-      <Text style={styles.subtitle}>Choose when you'd like to be reminded to log meals and your weight.</Text>
+      <Text style={styles.subtitle}>Choose when you'd like to be reminded to log meals and your weight, and before a free trial ends.</Text>
 
       {permissionDenied && (
         <View style={styles.notice}>
@@ -175,6 +187,20 @@ export default function RemindersScreen() {
             <TimeRow label="Time" value={weightReminderTime} onPress={() => setActivePicker('weight')} />
           </View>
         )}
+      </Card>
+
+      <Card style={styles.card}>
+        <View style={styles.toggleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleTitle}>Trial ending reminder</Text>
+            <Text style={styles.toggleSubtitle}>
+              {trialEndsAt
+                ? `Your free trial ends ${formatTrialEnd(trialEndsAt)}. Notify me 1 day before I'm charged.`
+                : "Notify me 1 day before a CalHow Pro free trial ends and I'm charged."}
+            </Text>
+          </View>
+          <Switch value={trialReminderEnabled} onValueChange={setTrialReminderEnabled} trackColor={{ true: theme.colors.brandPrimary }} />
+        </View>
       </Card>
 
       {error && <Text style={styles.errorText}>{error}</Text>}

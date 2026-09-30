@@ -118,6 +118,11 @@ export async function updateUserProfile(uid: string, patch: Partial<UserProfile>
   await setDoc(userDoc(uid), { ...patch, updatedAt: serverTimestamp() }, { merge: true });
 }
 
+/** Sets only `reminders.trialEndReminderEnabled` — a merge write leaves the user's other reminder settings untouched. */
+export async function setTrialReminderEnabled(uid: string, enabled: boolean) {
+  await setDoc(userDoc(uid), { reminders: { trialEndReminderEnabled: enabled }, updatedAt: serverTimestamp() }, { merge: true });
+}
+
 // ---------------------------------------------------------------------------
 // Meals
 // ---------------------------------------------------------------------------

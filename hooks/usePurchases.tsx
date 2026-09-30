@@ -6,6 +6,7 @@ import {
   configurePurchases,
   fetchCurrentOffering,
   getCustomerInfo,
+  getTrialEndDate,
   identifyPurchasesUser,
   isProFromCustomerInfo,
   logOutPurchasesUser,
@@ -37,9 +38,11 @@ interface PurchasesContextValue {
   customerInfo: CustomerInfo | null;
   /** Client-side/local only — see the module doc comment above. */
   isPro: boolean;
+  /** When the current free trial converts to paid — null if not in a (still-renewing) trial. See getTrialEndDate. */
+  trialEndsAt: Date | null;
   offering: PurchasesOffering | null;
   refresh: () => Promise<void>;
-  purchase: (pkg: PurchasesPackage) => Promise<{ success: boolean; userCancelled: boolean }>;
+  purchase: (pkg: PurchasesPackage) => Promise<{ success: boolean; userCancelled: boolean; customerInfo: CustomerInfo | null }>;
   restore: () => Promise<void>;
 }
 
@@ -136,7 +139,7 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
         setCustomerInfo(outcome.customerInfo);
         if (user) await syncProfileCache(user.uid, outcome.customerInfo);
       }
-      return { success: outcome.success, userCancelled: outcome.userCancelled };
+      return { success: outcome.success, userCancelled: outcome.userCancelled, customerInfo: outcome.customerInfo };
     },
     [user, syncProfileCache],
   );
@@ -148,10 +151,11 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
   }, [user, syncProfileCache]);
 
   const isPro = useMemo(() => isProFromCustomerInfo(customerInfo), [customerInfo]);
+  const trialEndsAt = useMemo(() => getTrialEndDate(customerInfo), [customerInfo]);
 
   const value = useMemo<PurchasesContextValue>(
-    () => ({ loading, error, customerInfo, isPro, offering, refresh, purchase, restore }),
-    [loading, error, customerInfo, isPro, offering, refresh, purchase, restore],
+    () => ({ loading, error, customerInfo, isPro, trialEndsAt, offering, refresh, purchase, restore }),
+    [loading, error, customerInfo, isPro, trialEndsAt, offering, refresh, purchase, restore],
   );
 
   return <PurchasesContext.Provider value={value}>{children}</PurchasesContext.Provider>;

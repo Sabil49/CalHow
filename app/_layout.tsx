@@ -18,10 +18,15 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
-import { PurchasesProvider } from '@/hooks/usePurchases';
+import { PurchasesProvider, usePurchases } from '@/hooks/usePurchases';
 import { ScanSessionProvider } from '@/hooks/useScanSession';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { getNotificationPermissionGranted, syncScheduledReminders } from '@/services/notifications';
+import {
+  getNotificationPermissionGranted,
+  isTrialReminderEnabled,
+  syncScheduledReminders,
+  syncTrialEndReminder,
+} from '@/services/notifications';
 import { theme } from '@/constants/theme';
 
 /**
@@ -53,6 +58,32 @@ function ReminderSync() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, remindersKey]);
+
+  return null;
+}
+
+/**
+ * Keeps the one-off "trial ends tomorrow" notification matching the live
+ * subscription: scheduled while the user is in a renewing free trial with
+ * the reminder on; cleared as soon as they cancel the trial, it converts,
+ * they turn the reminder off, or they sign out. Like ReminderSync, never
+ * prompts for permission itself (the paywall and Reminders screen do).
+ */
+function TrialReminderSync() {
+  const { user } = useAuth();
+  const { profile } = useUserProfile();
+  const { trialEndsAt } = usePurchases();
+  const profileLoaded = profile != null;
+  const enabled = !!user && isTrialReminderEnabled(profile?.reminders);
+  const trialEndsAtMs = trialEndsAt?.getTime() ?? null;
+
+  useEffect(() => {
+    // Wait for the profile, so a user who turned the reminder off never
+    // has it scheduled for a moment on app start.
+    if (user && !profileLoaded) return;
+    void syncTrialEndReminder({ enabled, trialEndsAt: trialEndsAtMs == null ? null : new Date(trialEndsAtMs) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, trialEndsAtMs, profileLoaded]);
 
   return null;
 }
@@ -95,6 +126,7 @@ export default function RootLayout() {
         <PurchasesProvider>
           <ScanSessionProvider>
             <ReminderSync />
+            <TrialReminderSync />
             <StatusBar style="dark" />
             <Stack
               screenOptions={{

@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PACKAGE_TYPE, type PurchasesPackage } from 'react-native-purchases';
+import { PACKAGE_TYPE, type CustomerInfo, type PurchasesPackage } from 'react-native-purchases';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { AppHeader } from '@/components/navigation/AppHeader';
 import { AuthGuard } from '@/components/navigation/AuthGuard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { usePurchases } from '@/hooks/usePurchases';
+import { getTrialEndDate } from '@/services/purchases';
+import { setTrialReminderEnabled } from '@/services/firestore';
+import { isTrialReminderEnabled, requestNotificationPermission, syncTrialEndReminder } from '@/services/notifications';
 import { describeFreeTrial, describePackagePrice } from '@/utils/purchaseDisplay';
 import { SHOW_COMING_SOON_FEATURES } from '@/constants/featureFlags';
 import { theme } from '@/constants/theme';
@@ -50,6 +54,7 @@ export default function PaywallScreen() {
 }
 
 function PaywallScreenContent() {
+  const { user } = useAuth();
   const { profile } = useUserProfile();
   const { error: purchasesError, isPro, customerInfo, offering, loading: purchasesLoading, purchase, restore, refresh } = usePurchases();
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
@@ -58,6 +63,34 @@ function PaywallScreenContent() {
   const packages = [offering?.annual, offering?.monthly].filter((p): p is PurchasesPackage => p != null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedPackage = packages.find((p) => p.identifier === selectedId) ?? packages[0] ?? null;
+  const selectedTrial = selectedPackage ? describeFreeTrial(selectedPackage) : null;
+
+  // "Remind me before my trial ends" — on by default, and follows the
+  // user's saved choice once they've made one (also editable later in
+  // Settings > Reminders).
+  const [remindBeforeTrialEnds, setRemindBeforeTrialEnds] = useState(() => isTrialReminderEnabled(profile?.reminders));
+
+  /**
+   * After a successful trial purchase: saves the toggle, asks for
+   * notification permission if the reminder is on, and schedules it for
+   * the trial end date RevenueCat reports. Best-effort — never turns a
+   * completed purchase into an error. Returns a note for the welcome alert
+   * when the reminder can't be delivered.
+   */
+  async function applyTrialReminderChoice(info: CustomerInfo | null): Promise<string | null> {
+    try {
+      if (user) await setTrialReminderEnabled(user.uid, remindBeforeTrialEnds);
+      if (!remindBeforeTrialEnds) {
+        await syncTrialEndReminder({ enabled: false, trialEndsAt: null });
+        return null;
+      }
+      const granted = await requestNotificationPermission();
+      await syncTrialEndReminder({ enabled: true, trialEndsAt: getTrialEndDate(info) });
+      return granted ? null : 'To get your trial reminder, allow notifications for CalHow in your device Settings.';
+    } catch {
+      return null;
+    }
+  }
 
   function handleManageSubscription() {
     const url = customerInfo?.managementURL;
@@ -76,6 +109,7 @@ function PaywallScreenContent() {
     try {
       const outcome = await purchase(selectedPackage);
       if (outcome.success) {
+        const reminderNote = selectedTrial ? await applyTrialReminderChoice(outcome.customerInfo) : null;
         // router.back() must run from the alert's own button callback, not
         // right after Alert.alert() — Alert.alert() returns immediately
         // without waiting for the user to dismiss it, so navigating away
@@ -83,7 +117,8 @@ function PaywallScreenContent() {
         // is unreliable on iOS and silently drops the navigation, leaving
         // the user stuck on this screen (now showing "You're already on
         // CalHow Pro!" since isPro flipped true) instead of going back.
-        Alert.alert('Welcome to CalHow Pro', 'Your subscription is now active.', [
+        const welcome = 'Your subscription is now active.';
+        Alert.alert('Welcome to CalHow Pro', reminderNote ? `${welcome}\n\n${reminderNote}` : welcome, [
           { text: 'OK', onPress: () => router.back() },
         ]);
       } else if (!outcome.userCancelled) {
@@ -230,11 +265,27 @@ function PaywallScreenContent() {
                   );
                 })}
 
+                {selectedTrial && (
+                  <View style={styles.trialReminderRow}>
+                    <Feather name="bell" size={16} color={theme.colors.brandDark} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.trialReminderTitle}>Remind me before my trial ends</Text>
+                      <Text style={styles.trialReminderSubtitle}>We'll send a notification 1 day before you're charged.</Text>
+                    </View>
+                    <Switch
+                      value={remindBeforeTrialEnds}
+                      onValueChange={setRemindBeforeTrialEnds}
+                      trackColor={{ true: theme.colors.brandPrimary }}
+                      accessibilityLabel="Remind me before my trial ends"
+                    />
+                  </View>
+                )}
+
                 <Button
                   label={
                     selectedPackage
-                      ? describeFreeTrial(selectedPackage)
-                        ? `Start ${describeFreeTrial(selectedPackage)}`
+                      ? selectedTrial
+                        ? `Start ${selectedTrial}`
                         : `Subscribe — ${describePackagePrice(selectedPackage)}`
                       : 'Subscribe'
                   }
@@ -494,6 +545,23 @@ const styles = StyleSheet.create({
     ...theme.text.caption,
     color: theme.colors.brandDark,
     fontFamily: theme.fontFamily.sansSemiBold,
+  },
+  trialReminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.brandTint,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+  },
+  trialReminderTitle: {
+    ...theme.text.body,
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fontFamily.sansSemiBold,
+  },
+  trialReminderSubtitle: {
+    ...theme.text.caption,
+    color: theme.colors.textSecondary,
   },
   subscribeButton: {
     marginTop: theme.spacing.xs,

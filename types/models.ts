@@ -80,6 +80,8 @@ export interface ReminderPreferences {
   /** 0 (Sunday) - 6 (Saturday). */
   weightReminderDay?: number;
   weightReminderTime?: string;
+  /** Notify 1 day before a CalHow Pro free trial converts to paid. Unset counts as on. */
+  trialEndReminderEnabled?: boolean;
 }
 
 export interface UserProfile {
