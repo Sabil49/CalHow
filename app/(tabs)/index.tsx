@@ -53,7 +53,9 @@ export default function HomeScreen() {
   const calorieGoal = profile?.goals?.dailyCalorieTarget ?? DEFAULT_CALORIE_GOAL;
   const macroGoals = profile?.goals?.macroTargets;
 
-  const percentOfGoal = calorieGoal > 0 ? Math.min(100, Math.round((totals.calories / calorieGoal) * 100)) : 0;
+  // The real percentage (can pass 100% when over the goal); only the bar/ring fill is capped.
+  const percentOfGoal = calorieGoal > 0 ? Math.round((totals.calories / calorieGoal) * 100) : 0;
+  const caloriesOver = Math.max(0, totals.calories - calorieGoal);
   const caloriesLeft = Math.max(0, calorieGoal - totals.calories);
 
   const macroPercent = (value: number, goal?: number) => (goal ? Math.round((value / goal) * 100) : undefined);
@@ -99,9 +101,13 @@ export default function HomeScreen() {
               <Text style={styles.intakeGoal}> / {calorieGoal.toLocaleString()} kcal</Text>
             </View>
             <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${percentOfGoal}%` }]} />
+              <View style={[styles.progressFill, caloriesOver > 0 && styles.progressFillOver, { width: `${Math.min(100, percentOfGoal)}%` }]} />
             </View>
-            <Text style={styles.caloriesLeft}>{caloriesLeft.toLocaleString()} kcal left</Text>
+            {caloriesOver > 0 ? (
+              <Text style={[styles.caloriesLeft, styles.caloriesOver]}>{caloriesOver.toLocaleString()} kcal over your goal</Text>
+            ) : (
+              <Text style={styles.caloriesLeft}>{caloriesLeft.toLocaleString()} kcal left</Text>
+            )}
           </View>
           <ProgressRing progress={percentOfGoal} size={88} strokeWidth={8}>
             <ProgressRingLabel value={`${percentOfGoal}%`} label="of goal" />
@@ -266,6 +272,13 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.brandPrimary,
+  },
+  progressFillOver: {
+    backgroundColor: theme.colors.warning,
+  },
+  caloriesOver: {
+    color: theme.colors.warning,
+    fontFamily: theme.fontFamily.sansSemiBold,
   },
   caloriesLeft: {
     ...theme.text.caption,

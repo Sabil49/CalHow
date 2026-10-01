@@ -267,17 +267,13 @@ function PaywallScreenContent() {
 
                 {selectedTrial && (
                   <View style={styles.trialReminderRow}>
-                    <Feather name="bell" size={16} color={theme.colors.brandDark} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.trialReminderTitle}>Remind me before my trial ends</Text>
-                      <Text style={styles.trialReminderSubtitle}>We'll send a notification 1 day before you're charged.</Text>
-                    </View>
                     <Switch
                       value={remindBeforeTrialEnds}
                       onValueChange={setRemindBeforeTrialEnds}
                       trackColor={{ true: theme.colors.brandPrimary }}
                       accessibilityLabel="Remind me before my trial ends"
                     />
+                    <Text style={styles.trialReminderText}>Remind me 1 day before my trial ends</Text>
                   </View>
                 )}
 
@@ -547,20 +543,13 @@ const styles = StyleSheet.create({
     fontFamily: theme.fontFamily.sansSemiBold,
   },
   trialReminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    backgroundColor: theme.colors.brandTint,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    alignSelf: 'flex-start',
+    alignItems: 'flex-start',
+    gap: 4,
   },
-  trialReminderTitle: {
-    ...theme.text.body,
-    color: theme.colors.textPrimary,
-    fontFamily: theme.fontFamily.sansSemiBold,
-  },
-  trialReminderSubtitle: {
+  trialReminderText: {
     ...theme.text.caption,
+    fontSize: 11,
     color: theme.colors.textSecondary,
   },
   subscribeButton: {

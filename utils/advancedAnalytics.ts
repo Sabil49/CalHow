@@ -1,5 +1,7 @@
 import type { Meal, MealType, WeightLog } from '@/types/models';
-import { periodToDays, type ProgressPeriod } from './progressStats';
+import { localDayKey, periodToDays, type ProgressPeriod } from './progressStats';
+
+export { localDayKey };
 
 /**
  * CalHow Pro "Advanced Progress Analytics" — pure calculations behind the
@@ -8,14 +10,6 @@ import { periodToDays, type ProgressPeriod } from './progressStats';
  * on days the user actually logged food, so a skipped day doesn't read as
  * a 0-calorie day.
  */
-
-/** Local calendar day, e.g. "2026-09-30" — local, not UTC, so late-evening meals count toward the right day. */
-export function localDayKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
 
 function periodStart(period: ProgressPeriod, now: Date): Date {
   const start = new Date(now);

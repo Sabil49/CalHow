@@ -5,7 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import type { CustomTargetsCheck } from '@/utils/nutrition';
+import { formatShortDate, type CalorieTargetOutlook, type CustomTargetsCheck } from '@/utils/nutrition';
 import { theme } from '@/constants/theme';
 
 export interface CustomTargetsValues {
@@ -26,6 +26,32 @@ interface CustomTargetsCardProps {
   check: CustomTargetsCheck;
   /** Refills every field from the current recommended targets. */
   onReset: () => void;
+  /** What the entered calories mean for the user's weight; undefined while the calories are invalid. */
+  outlook?: CalorieTargetOutlook;
+  /** Shown with the outlook, when the goal has a target weight. */
+  targetWeightLabel?: string;
+}
+
+/** "You'd lose about 0.4 kg a week …" — how a custom target gets the user to their goal. */
+function OutlookNote({ outlook, targetWeightLabel }: { outlook: CalorieTargetOutlook; targetWeightLabel?: string }) {
+  const { weeklyChangeKg, maintenanceCalories, goalDate } = outlook;
+  const pace = Math.abs(weeklyChangeKg).toFixed(Math.abs(weeklyChangeKg) < 0.1 ? 2 : 1);
+  const direction =
+    weeklyChangeKg === 0 ? 'keep your weight about the same' : `${weeklyChangeKg < 0 ? 'lose' : 'gain'} about ${pace} kg a week`;
+  return (
+    <View style={styles.outlook}>
+      <Feather name="trending-up" size={14} color={theme.colors.brandDark} />
+      <Text style={styles.outlookText}>
+        At this target you'd <Text style={styles.outlookAccent}>{direction}</Text> (your estimated maintenance is{' '}
+        {maintenanceCalories.toLocaleString()} kcal/day).
+        {goalDate && targetWeightLabel ? (
+          <>
+            {' '}You'd reach {targetWeightLabel} around <Text style={styles.outlookAccent}>{formatShortDate(goalDate)}</Text>.
+          </>
+        ) : null}
+      </Text>
+    </View>
+  );
 }
 
 /**
@@ -33,7 +59,7 @@ interface CustomTargetsCardProps {
  * estimated calorie/macro targets with their own. Free users see the same
  * card locked, pointing at the paywall. Used by the Goals settings screen.
  */
-export function CustomTargetsCard({ isPro, enabled, onEnabledChange, values, onValuesChange, check, onReset }: CustomTargetsCardProps) {
+export function CustomTargetsCard({ isPro, enabled, onEnabledChange, values, onValuesChange, check, onReset, outlook, targetWeightLabel }: CustomTargetsCardProps) {
   if (!isPro) {
     return (
       <Card style={styles.card}>
@@ -88,6 +114,8 @@ export function CustomTargetsCard({ isPro, enabled, onEnabledChange, values, onV
             <Input label="Fat" value={values.fatsG} onChangeText={set('fatsG')} keyboardType="number-pad" rightAdornment={gramsSuffix} containerStyle={styles.rowField} />
             <Input label="Fiber (optional)" value={values.fiberG} onChangeText={set('fiberG')} keyboardType="number-pad" rightAdornment={gramsSuffix} containerStyle={styles.rowField} />
           </View>
+
+          {outlook && check.errors.length === 0 && <OutlookNote outlook={outlook} targetWeightLabel={targetWeightLabel} />}
 
           {check.macroCalories > 0 && (
             <View style={styles.splitRow}>
@@ -205,6 +233,23 @@ const styles = StyleSheet.create({
   splitTotal: {
     ...theme.text.caption,
     color: theme.colors.textSecondary,
+  },
+  outlook: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.xs,
+    backgroundColor: theme.colors.brandTint,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+  },
+  outlookText: {
+    ...theme.text.caption,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  outlookAccent: {
+    fontFamily: theme.fontFamily.sansSemiBold,
+    color: theme.colors.brandDark,
   },
   notice: {
     flexDirection: 'row',

@@ -20,7 +20,8 @@ interface MealTotalsCardProps {
  * meal later) so the math and layout live in exactly one place.
  */
 export function MealTotalsCard({ calories, carbs, protein, fats, fiber, calorieGoal }: MealTotalsCardProps) {
-  const percentOfGoal = calorieGoal > 0 ? Math.min(100, Math.round((calories / calorieGoal) * 100)) : 0;
+  // Real percentage — a meal can be more than a whole day's goal; ProgressRing caps its own fill.
+  const percentOfGoal = calorieGoal > 0 ? Math.round((calories / calorieGoal) * 100) : 0;
 
   const macroShares = useMemo(() => {
     const totalMacroCalories = protein * 4 + carbs * 4 + fats * 9;
@@ -41,7 +42,7 @@ export function MealTotalsCard({ calories, carbs, protein, fats, fiber, calorieG
           <Text style={styles.value}>{Math.round(calories)} kcal</Text>
           <Text style={styles.goal}>{percentOfGoal}% of daily goal</Text>
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${percentOfGoal}%` }]} />
+            <View style={[styles.progressFill, { width: `${Math.min(100, percentOfGoal)}%` }]} />
           </View>
         </View>
 

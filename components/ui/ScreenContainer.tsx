@@ -15,7 +15,8 @@ interface ScreenContainerProps {
 }
 
 /**
- * Standard screen wrapper: warm cream background, safe-area aware,
+ * Standard screen wrapper: warm cream background with soft lime/sage
+ * bands (theme.gradients.screenStripes), safe-area aware,
  * consistent horizontal padding. Use `scroll` for content-heavy screens
  * and leave it off for screens that manage their own layout (e.g. camera).
  *
@@ -34,6 +35,14 @@ export function ScreenContainer({
 }: ScreenContainerProps) {
   return (
     <LinearGradient colors={theme.gradients.screenBackground} style={styles.gradient}>
+      <LinearGradient
+        colors={theme.gradients.screenStripes}
+        locations={theme.gradients.screenStripeLocations}
+        start={{ x: 0, y: 0.15 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.stripes}
+        pointerEvents="none"
+      />
       <SafeAreaView style={[styles.safeArea, style]} edges={edges}>
         {scroll ? (
           <KeyboardAvoidingView
@@ -60,6 +69,14 @@ export function ScreenContainer({
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
+  },
+  stripes: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    opacity: 0.85,
   },
   safeArea: {
     flex: 1,

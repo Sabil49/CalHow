@@ -189,7 +189,6 @@ export default function ProgressScreen() {
           <HabitTile icon="camera" value={`${habits.daysLogged}/${habits.totalDays}`} label="Days logged" />
           <HabitTile icon="feather" value={`${habits.highFiberDays}/${habits.totalDays}`} label="High fiber days" />
         </View>
-        <Text style={styles.habitsNote}>More habit tracking (water, sleep, activity) is coming in a future update.</Text>
       </Card>
 
       <AdvancedAnalyticsSection
@@ -219,7 +218,8 @@ export default function ProgressScreen() {
 }
 
 function OverviewRing({ label, value, goal, unit, color }: { label: string; value: number; goal: number; unit: string; color: string }) {
-  const percent = goal > 0 ? Math.min(100, Math.round((value / goal) * 100)) : 0;
+  // Real percentage — over 100% when above the goal; ProgressRing caps its own fill.
+  const percent = goal > 0 ? Math.round((value / goal) * 100) : 0;
   return (
     <View style={styles.overviewRingCol}>
       <ProgressRing progress={percent} size={64} strokeWidth={6} color={color}>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { ProLockedCard } from '@/components/ui/ProLockedCard';
 import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { useScanSession } from '@/hooks/useScanSession';
-import { scanMenu, ApiError } from '@/services/api';
+import { estimateMenuDish, scanMenu, ApiError } from '@/services/api';
 import { theme } from '@/constants/theme';
 import type { ScanMenuDish } from '@/types/api';
 
@@ -28,6 +28,27 @@ export default function MenuScanScreen() {
   const [phase, setPhase] = useState<Phase>('pick');
   const [dishes, setDishes] = useState<ScanMenuDish[]>([]);
   const [error, setError] = useState<string | null>(null);
+  /** Index of the dish being estimated on demand, if any. */
+  const [estimatingIndex, setEstimatingIndex] = useState<number | null>(null);
+
+  async function handleEstimate(index: number) {
+    const dish = dishes[index];
+    if (!dish?.pending || estimatingIndex != null) return;
+    setEstimatingIndex(index);
+    try {
+      const estimated = await estimateMenuDish({
+        name: dish.name,
+        description: dish.description,
+        confidence: dish.pending.confidence,
+        components: dish.pending.components,
+      });
+      setDishes((current) => current.map((d, i) => (i === index ? estimated : d)));
+    } catch (err) {
+      Alert.alert("Couldn't estimate this dish", err instanceof ApiError ? err.message : 'Please try again.');
+    } finally {
+      setEstimatingIndex(null);
+    }
+  }
 
   async function pickImage(source: 'camera' | 'library') {
     setError(null);
@@ -116,6 +137,15 @@ export default function MenuScanScreen() {
                   </Text>
                   <Button label="Log this dish" icon="plus" variant="outline" onPress={() => handleLog(dish)} />
                 </>
+              ) : dish.pending ? (
+                <Button
+                  label="Estimate calories"
+                  icon="zap"
+                  variant="ghost"
+                  onPress={() => handleEstimate(index)}
+                  loading={estimatingIndex === index}
+                  disabled={estimatingIndex != null && estimatingIndex !== index}
+                />
               ) : (
                 <Text style={styles.unavailable}>{dish.unavailableReason ?? "Couldn't estimate this dish."}</Text>
               )}

@@ -16,10 +16,13 @@ import { ACTIVITY_OPTIONS, GOAL_OPTIONS } from '@/constants/goalOptions';
 import {
   calculateAge,
   checkCustomTargets,
+  estimateCalorieTargetOutlook,
+  estimateMaintenanceCalories,
   estimateDailyCalorieTarget,
   estimateGoalDate,
   estimateMacroTargets,
 } from '@/utils/nutrition';
+import { kgToLb } from '@/utils/units';
 import { theme } from '@/constants/theme';
 import type { ActivityLevel, GoalType, UserGoals } from '@/types/models';
 
@@ -92,6 +95,27 @@ export default function GoalsScreen() {
     [customValues],
   );
   const useCustom = isPro && customEnabled;
+
+  // How the custom calories get the user to their goal (see utils/nutrition.ts).
+  const customOutlook = useMemo(() => {
+    const calories = parseTarget(customValues.calories);
+    if (!Number.isFinite(calories)) return undefined;
+    const maintenanceCalories = estimateMaintenanceCalories({
+      gender: profile?.gender,
+      heightCm: profile?.heightCm,
+      weightKg: currentWeightKg,
+      age: calculateAge(profile?.dateOfBirth),
+      activityLevel,
+    });
+    return estimateCalorieTargetOutlook({
+      calories,
+      maintenanceCalories,
+      currentWeightKg,
+      targetWeightKg: isPaceRelevant ? targetWeightNumber : undefined,
+    });
+  }, [customValues.calories, profile, currentWeightKg, activityLevel, isPaceRelevant, targetWeightNumber]);
+  const targetWeightLabel =
+    profile?.preferredUnit === 'imperial' ? `${kgToLb(targetWeightNumber).toFixed(0)} lb` : `${targetWeightNumber} kg`;
 
   function resetCustomValues() {
     setCustomValues(toCustomValues(dailyCalorieTarget, estimateMacroTargets(dailyCalorieTarget)));
@@ -197,6 +221,8 @@ export default function GoalsScreen() {
         onValuesChange={setCustomValues}
         check={customCheck}
         onReset={resetCustomValues}
+        outlook={customOutlook}
+        targetWeightLabel={isPaceRelevant ? targetWeightLabel : undefined}
       />
 
       {error && <Text style={styles.errorText}>{error}</Text>}

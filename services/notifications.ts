@@ -156,9 +156,9 @@ async function doSyncScheduledReminders(reminders: ReminderPreferences | undefin
   }
 }
 
-/** The trial reminder is on unless the user turned it off — `undefined` (never set) counts as on. */
+/** The trial reminder is opt-in — `undefined` (never set) counts as off. */
 export function isTrialReminderEnabled(reminders: ReminderPreferences | undefined): boolean {
-  return reminders?.trialEndReminderEnabled ?? true;
+  return reminders?.trialEndReminderEnabled ?? false;
 }
 
 /**

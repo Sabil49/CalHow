@@ -69,6 +69,11 @@ export const gradients = {
   gold: ['#F6C453', '#E8A233'] as const,
   // Subtle whole-screen wash — low-contrast enough to sit behind dense text/forms
   screenBackground: [palette.cream, palette.creamDeep] as const,
+  // Soft, blurred vertical bands laid over screenBackground (left -> right):
+  // pale lime and sage fading through warm off-white. Kept very light so
+  // white cards and body text keep their contrast.
+  screenStripes: ['#EAF3D9', '#FDFBF4', '#F4F0E0', '#E8F2DA', '#FFFCF5', '#F1F6E2', '#EDF4DE'] as const,
+  screenStripeLocations: [0, 0.18, 0.36, 0.52, 0.7, 0.86, 1] as const,
 };
 
 export const colors = {

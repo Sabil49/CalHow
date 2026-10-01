@@ -169,6 +169,40 @@ export function checkCustomTargets({ calories, proteinG, carbsG, fatsG }: Custom
   return { macroCalories, percent, errors, warnings };
 }
 
+/** Estimated calories per day to keep weight steady: BMR (Mifflin-St Jeor) × activity multiplier. */
+export function estimateMaintenanceCalories({ activityLevel = 'sedentary', ...bmrInput }: BmrInput & { activityLevel?: ActivityLevel }): number {
+  return Math.round((estimateBmr(bmrInput) * ACTIVITY_MULTIPLIER[activityLevel]) / 10) * 10;
+}
+
+export interface CalorieTargetOutlook {
+  maintenanceCalories: number;
+  /** Expected weekly weight change at this target, kg (negative = losing), rounded to 0.05. */
+  weeklyChangeKg: number;
+  /** When the target weight would be reached at that pace; undefined if the pace doesn't move toward it. */
+  goalDate?: Date;
+}
+
+/**
+ * What a hand-entered (Custom Goals) calorie target means for the user's
+ * weight: the daily surplus/deficit against estimated maintenance,
+ * converted at ~7,700 kcal per kg. The same estimate the recommended
+ * target is built from, just run in reverse.
+ */
+export function estimateCalorieTargetOutlook(params: {
+  calories: number;
+  maintenanceCalories: number;
+  currentWeightKg: number;
+  targetWeightKg?: number;
+}): CalorieTargetOutlook {
+  const weeklyChangeKg = Math.round((((params.calories - params.maintenanceCalories) * 7) / KCAL_PER_KG_FAT) * 20) / 20;
+  let goalDate: Date | undefined;
+  const { targetWeightKg, currentWeightKg } = params;
+  if (targetWeightKg != null && weeklyChangeKg !== 0 && Math.sign(targetWeightKg - currentWeightKg) === Math.sign(weeklyChangeKg)) {
+    goalDate = estimateGoalDate(currentWeightKg, targetWeightKg, Math.abs(weeklyChangeKg));
+  }
+  return { maintenanceCalories: params.maintenanceCalories, weeklyChangeKg, goalDate };
+}
+
 /** Projected date to reach `targetWeightKg` at `weeklyPaceKg` per week from `currentWeightKg`. */
 export function estimateGoalDate(
   currentWeightKg: number,

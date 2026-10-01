@@ -38,6 +38,31 @@ export interface ScanMenuDish {
   clarificationQuestions?: ClarificationQuestion[];
   /** Present when the dish couldn't be estimated. */
   unavailableReason?: string;
+  /** Present on dishes past the first few: not estimated yet — send to POST /estimateMenuDish to estimate it. */
+  pending?: {
+    confidence: number;
+    components: { name: string; preparation: string; portionGrams: number }[];
+  };
+}
+
+/** POST /estimateMenuDish — CalHow Pro. */
+export interface EstimateMenuDishRequest {
+  name: string;
+  description?: string;
+  confidence: number;
+  components: NonNullable<ScanMenuDish['pending']>['components'];
+}
+
+/** POST /mealIdeas — CalHow Pro "What Should I Eat Next?" new ideas. */
+export interface MealIdeasRequest {
+  remainingCalories: number;
+  remainingProtein?: number;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}
+
+export interface MealIdeasResponse {
+  /** Same shape as a menu dish: nutrition from USDA, loggable via analysisId. */
+  ideas: ScanMenuDish[];
 }
 
 export interface ScanMenuResponse {

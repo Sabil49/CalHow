@@ -8,6 +8,10 @@ import type {
   MealInsightsRequest,
   MealInsightsResponse,
   ScanMenuRequest,
+  ScanMenuDish,
+  EstimateMenuDishRequest,
+  MealIdeasRequest,
+  MealIdeasResponse,
   ScanMenuResponse,
   RecalculateMealRequest,
   RecalculateMealResponse,
@@ -95,6 +99,16 @@ export function getMealInsights(mealId: string) {
 /** POST /scanMenu — CalHow Pro Restaurant & Menu Scanner. */
 export function scanMenu(payload: ScanMenuRequest) {
   return authedFetch<ScanMenuResponse>('/scanMenu', payload);
+}
+
+/** POST /estimateMenuDish — estimate one dish a menu scan left pending. */
+export function estimateMenuDish(payload: EstimateMenuDishRequest) {
+  return authedFetch<ScanMenuDish>('/estimateMenuDish', payload);
+}
+
+/** POST /mealIdeas — new meal ideas that fit what's left of today. */
+export function getMealIdeas(payload: MealIdeasRequest) {
+  return authedFetch<MealIdeasResponse>('/mealIdeas', payload);
 }
 
 /** POST /uploadMealImage — upload a captured meal photo to durable remote storage, get back its URL. */

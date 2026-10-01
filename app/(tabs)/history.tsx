@@ -127,7 +127,7 @@ export default function HistoryScreen() {
             <View key={group.dateKey} style={styles.dayGroup}>
               <Text style={styles.dayGroupLabel}>{group.label}</Text>
               {group.meals.map((meal) => {
-                const percent = goalCalories ? Math.min(100, Math.round((meal.calories / goalCalories) * 100)) : undefined;
+                const percent = goalCalories ? Math.round((meal.calories / goalCalories) * 100) : undefined;
                 return (
                   <MealListItem
                     key={meal.id}

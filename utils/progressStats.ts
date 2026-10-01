@@ -1,5 +1,23 @@
 import type { Meal } from '@/types/models';
 
+/** Local calendar day, e.g. "2026-09-30" — local, not UTC, so late-evening meals count toward the right day. */
+export function localDayKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Number of distinct local days with at least one logged meal — the divisor
+ * for every "per day" average here. Dividing by the period length instead
+ * (7/30/90/365) counted unlogged days as 0-calorie days, so the same eating
+ * looked smaller the longer the period.
+ */
+function loggedDayCount(meals: Meal[]): number {
+  return new Set(meals.map((m) => localDayKey(m.loggedAt))).size;
+}
+
 export type ProgressPeriod = 'week' | 'month' | '3months' | 'year';
 
 export function periodToDays(period: ProgressPeriod): number {
@@ -49,14 +67,14 @@ interface GoalInputs {
 }
 
 /**
- * Per-day averages over the period compared against the user's daily
- * goals. Averaging (rather than summing) keeps the numbers meaningful
- * regardless of which period is selected — a raw sum over a year next to
- * a single day's calorie goal wouldn't mean anything.
+ * Per-day averages over the LOGGED days in the period, compared against
+ * the user's daily goals. Averaging (rather than summing) keeps the
+ * numbers meaningful regardless of which period is selected — a raw sum
+ * over a year next to a single day's calorie goal wouldn't mean anything.
  */
 export function computeNutritionOverview(meals: Meal[], period: ProgressPeriod, goals: GoalInputs): NutritionOverview {
-  const days = periodToDays(period);
-  const periodMeals = mealsInPeriod(meals, days);
+  const periodMeals = mealsInPeriod(meals, periodToDays(period));
+  const days = Math.max(1, loggedDayCount(periodMeals));
   const totals = periodMeals.reduce(
     (acc, m) => ({
       calories: acc.calories + m.calories,
@@ -116,7 +134,7 @@ export function bucketCaloriesForChart(meals: Meal[], period: ProgressPeriod): C
     start.setDate(start.getDate() - Math.round((i + 1) * bucketSizeDays));
     const bucketMeals = periodMeals.filter((m) => m.loggedAt >= start && m.loggedAt < end);
     const totalKcal = bucketMeals.reduce((sum, m) => sum + m.calories, 0);
-    const daysInBucket = Math.max(1, Math.round(bucketSizeDays));
+    const daysInBucket = Math.max(1, loggedDayCount(bucketMeals));
     const midpoint = new Date((start.getTime() + end.getTime()) / 2);
     buckets.unshift({ label: dateFmt.format(midpoint), value: Math.round(totalKcal / daysInBucket) });
   }
@@ -130,8 +148,8 @@ export interface MacroBalance {
 }
 
 export function computeMacroBalance(meals: Meal[], period: ProgressPeriod): MacroBalance {
-  const days = periodToDays(period);
-  const periodMeals = mealsInPeriod(meals, days);
+  const periodMeals = mealsInPeriod(meals, periodToDays(period));
+  const days = Math.max(1, loggedDayCount(periodMeals));
   const totals = periodMeals.reduce(
     (acc, m) => ({ protein: acc.protein + m.protein, carbs: acc.carbs + m.carbs, fats: acc.fats + m.fats }),
     { protein: 0, carbs: 0, fats: 0 },
