@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type Styl
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/constants/theme';
+import { DotPattern } from './DotPattern';
 
 interface ScreenContainerProps {
   children: React.ReactNode;
@@ -16,7 +17,8 @@ interface ScreenContainerProps {
 
 /**
  * Standard screen wrapper: warm cream background with soft lime/sage
- * bands (theme.gradients.screenStripes), safe-area aware,
+ * bands (theme.gradients.screenStripes) and a fading dot grid
+ * (DotPattern), safe-area aware,
  * consistent horizontal padding. Use `scroll` for content-heavy screens
  * and leave it off for screens that manage their own layout (e.g. camera).
  *
@@ -43,6 +45,7 @@ export function ScreenContainer({
         style={styles.stripes}
         pointerEvents="none"
       />
+      <DotPattern />
       <SafeAreaView style={[styles.safeArea, style]} edges={edges}>
         {scroll ? (
           <KeyboardAvoidingView
